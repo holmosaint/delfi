@@ -9,7 +9,6 @@ from delfi.utils.progress import no_tqdm, progressbar
 import time
 import h5py
 
-
 class Worker(mp.Process):
     def __init__(self, n, queue, conn, model, summary, seed=None, verbose=False):
         super().__init__()
