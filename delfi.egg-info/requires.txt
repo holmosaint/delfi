@@ -1,0 +1,7 @@
+dill
+lasagne@ git+https://github.com/Lasagne/Lasagne#egg=lasagne
+numpy
+scipy
+theano
+tqdm
+snl@ git+https://github.com/mackelab/snl#egg=snl
