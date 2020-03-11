@@ -18,7 +18,7 @@ def MoGL2sq(p1, p2):
     L2 = 0.0
     # compute all the integrals. don't compute cross terms twice
     for i in range(len(w)):
-        L2 += w[i] ** 2 * gaussprodintegral(allxs[i], allxs[i])
+        L2 += w[i]**2 * gaussprodintegral(allxs[i], allxs[i])
         for j in range(i):
             L2 += 2 * w[i] * w[j] * gaussprodintegral(allxs[i], allxs[j])
 

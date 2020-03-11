@@ -24,6 +24,6 @@ class Mean(BaseSummaryStats):
 
         # for every repetition, take the mean of the data in the dict
         for rep_idx, rep_dict in enumerate(repetition_list):
-            repetition_stats_matrix[rep_idx, ] = np.mean(rep_dict['data'])
+            repetition_stats_matrix[rep_idx,] = np.mean(rep_dict['data'])
 
         return repetition_stats_matrix

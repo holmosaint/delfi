@@ -11,8 +11,16 @@ from delfi.neuralnet.NeuralNet import dtype
 
 
 class SNPEA(BaseInference):
-    def __init__(self, generator, obs, prior_norm=False, pilot_samples=100,
-                 n_components=1, reg_lambda=0.01, seed=None, verbose=True,
+
+    def __init__(self,
+                 generator,
+                 obs,
+                 prior_norm=False,
+                 pilot_samples=100,
+                 n_components=1,
+                 reg_lambda=0.01,
+                 seed=None,
+                 verbose=True,
                  **kwargs):
         """SNPE-A
 
@@ -56,9 +64,12 @@ class SNPEA(BaseInference):
         self.obs = obs
         if np.any(np.isnan(self.obs)):
             raise ValueError("Observed data contains NaNs")
-        super().__init__(generator, prior_norm=prior_norm,
-                         pilot_samples=pilot_samples, seed=seed,
-                         verbose=verbose, **kwargs)
+        super().__init__(generator,
+                         prior_norm=prior_norm,
+                         pilot_samples=pilot_samples,
+                         seed=seed,
+                         verbose=verbose,
+                         **kwargs)
 
         # we'll use only 1 component until the last round
         kwargs.update({'n_components': 1})
@@ -87,8 +98,13 @@ class SNPEA(BaseInference):
 
         return loss
 
-    def run(self, n_train=100, n_rounds=2, epochs=100, minibatch=50,
-            monitor=None, **kwargs):
+    def run(self,
+            n_train=100,
+            n_rounds=2,
+            epochs=100,
+            minibatch=50,
+            monitor=None,
+            **kwargs):
         """Run algorithm
 
         Parameters
@@ -159,7 +175,6 @@ class SNPEA(BaseInference):
                 network_spec.update({'n_components': self.n_components})
                 self.network = NeuralNet(**network_spec)
                 new_params = self.network.params_dict
-
                 """In order to go from 1 component in previous rounds to
                 self.n_components in the current round we will duplicate
                 component 1 self.n_components times, with small random
@@ -172,7 +187,8 @@ class SNPEA(BaseInference):
                     """for each param_name, get the corresponding old parameter
                     name/value for what was previously the only mixture
                     component"""
-                    param_label = re.sub("\d", "", param_name) # removing layer counts
+                    param_label = re.sub("\d", "",
+                                         param_name)  # removing layer counts
                     source_param_name = param_label + '0'
                     source_param_val = old_params[source_param_name]
                     # copy it to the new component, add noise to break symmetry
@@ -180,19 +196,24 @@ class SNPEA(BaseInference):
                         1.0e-6 * self.rng.randn(*source_param_val.shape)).astype(dtype)
 
                 # initialize with equal mixture coefficients for all data
-                old_params['weights.mW'] = (0. * new_params['weights.mW']).astype(dtype)
-                old_params['weights.mb'] = (0. * new_params['weights.mb']).astype(dtype)
+                old_params['weights.mW'] = (
+                    0. * new_params['weights.mW']).astype(dtype)
+                old_params['weights.mb'] = (
+                    0. * new_params['weights.mb']).astype(dtype)
 
                 self.network.params_dict = old_params
 
             trn_inputs = [self.network.params, self.network.stats]
 
-            t = Trainer(self.network, self.loss(N=n_train_round),
-                        trn_data=trn_data, trn_inputs=trn_inputs,
+            t = Trainer(self.network,
+                        self.loss(N=n_train_round),
+                        trn_data=trn_data,
+                        trn_inputs=trn_inputs,
                         monitor=self.monitor_dict_from_names(monitor),
-                        seed=self.gen_newseed(), **kwargs)
-            logs.append(t.train(epochs=epochs, minibatch=minibatch,
-                                verbose=verbose))
+                        seed=self.gen_newseed(),
+                        **kwargs)
+            logs.append(
+                t.train(epochs=epochs, minibatch=minibatch, verbose=verbose))
 
             trn_datasets.append(trn_data)
             try:

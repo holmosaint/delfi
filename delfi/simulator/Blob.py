@@ -4,8 +4,15 @@ from delfi.simulator.BaseSimulator import BaseSimulator
 
 
 class Blob(BaseSimulator):
-    def __init__(self, isize=32, maxval=255, sigma=None, seed=None,
-                 xy_abs_max=17, gamma_min=0.2, gamma_max=5.05):
+
+    def __init__(self,
+                 isize=32,
+                 maxval=255,
+                 sigma=None,
+                 seed=None,
+                 xy_abs_max=17,
+                 gamma_min=0.2,
+                 gamma_max=5.05):
         """Gauss simulator
 
         Toy model that generates images containing a blob. For details, see
@@ -54,8 +61,8 @@ class Blob(BaseSimulator):
         gamma = (self.gamma_max - self.gamma_min) / (1. + np.exp(-gamma)) \
             + self.gamma_min
 
-        r = (self.x - xo) ** 2 + (self.y - yo) ** 2
-        p = 0.1 + 0.8 * np.exp(-0.5 * (r / sigma ** 2) ** gamma)
+        r = (self.x - xo)**2 + (self.y - yo)**2
+        p = 0.1 + 0.8 * np.exp(-0.5 * (r / sigma**2)**gamma)
 
         counts = self.rng.binomial(self.maxval, p) / self.maxval
 

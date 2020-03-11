@@ -5,7 +5,13 @@ from delfi.simulator.BaseSimulator import BaseSimulator
 
 
 class NoiseDataDimensions(BaseSimulator):
-    def __init__(self, model, noise_dist, seed=None, deepcopy_inputs=True, rand_permute=True):
+
+    def __init__(self,
+                 model,
+                 noise_dist,
+                 seed=None,
+                 deepcopy_inputs=True,
+                 rand_permute=True):
         """Gauss simulator
 
         Toy model that draws data from a distribution centered on theta with
@@ -47,4 +53,8 @@ class NoiseDataDimensions(BaseSimulator):
         model_sample = self.model.gen(1)
         noise_sample = self.noise_dist.gen(1)
 
-        return {'data': np.concatenate((model_sample.reshape(-1), noise_sample))[self.permutation]}
+        return {
+            'data':
+                np.concatenate((model_sample.reshape(-1), noise_sample))
+                [self.permutation]
+        }

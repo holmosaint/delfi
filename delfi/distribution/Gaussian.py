@@ -6,6 +6,7 @@ from delfi.distribution.StudentsT import StudentsT
 
 
 class Gaussian(BaseDistribution):
+
     def __init__(self, m=None, P=None, U=None, S=None, Pm=None, seed=None):
         """Gaussian distribution
 
@@ -184,7 +185,7 @@ class Gaussian(BaseDistribution):
 
     def __ipow__(self, power):
         """Incrementally raise gaussian to a power"""
-        res = self ** power
+        res = self**power
 
         self.m = res.m
         self.P = res.P
@@ -224,8 +225,11 @@ class Gaussian(BaseDistribution):
             if m.size == 1:  # single marginal
                 x = x.reshape(-1, m.size)
             assert x.shape[1] == m.size
-            if np.linalg.matrix_rank(S)==len(S[:,0]):
-                lp = scipy.stats.multivariate_normal.logpdf(x, m, S, allow_singular=True)
+            if np.linalg.matrix_rank(S) == len(S[:, 0]):
+                lp = scipy.stats.multivariate_normal.logpdf(x,
+                                                            m,
+                                                            S,
+                                                            allow_singular=True)
                 lp = np.array([lp]) if x.shape[0] == 1 else lp
             else:
                 raise ValueError('Rank deficiency in covariance matrix')

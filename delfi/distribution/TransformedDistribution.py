@@ -30,7 +30,13 @@ class TransformedDistribution(BaseDistribution):
     makecopy: bool
         Whether to call deepcopy on the simulator, unlinking the RNGs
     """
-    def __init__(self, distribution, bijection, inverse_bijection, bijection_jac_logD, makecopy=False):
+
+    def __init__(self,
+                 distribution,
+                 bijection,
+                 inverse_bijection,
+                 bijection_jac_logD,
+                 makecopy=False):
         #assert isinstance(distribution, BaseDistribution) or isinstance(distribution, BaseMixture) \
         #    or isinstance(distribution, MAFconditional)
         if makecopy:
@@ -55,7 +61,8 @@ class TransformedDistribution(BaseDistribution):
         assert ii is None, "cannot marginalize transformed distributions"
         x_original = self.inverse_bijection(x)
         logp_original = self.distribution.eval(x_original, log=True)
-        logp = logp_original - self.bijection_jac_logD(x_original)  # change of variables
+        logp = logp_original - self.bijection_jac_logD(
+            x_original)  # change of variables
         return logp if log else np.exp(logp)
 
     @copy_ancestor_docstring

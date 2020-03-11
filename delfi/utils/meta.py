@@ -7,13 +7,14 @@ class ABCMetaDoc(type, metaclass=abc.ABCMeta):
     """
     Source: http://code.activestate.com/recipes/578587-inherit-method-docstrings-without-breaking-decorat/
     """
+
     @classmethod
     def __prepare__(cls, name, bases, **kwds):
         classdict = super().__prepare__(name, bases, *kwds)
 
         # Inject decorators into class namespace
-        classdict['copy_ancestor_docstring'] = partial(
-            _copy_ancestor_docstring, mro(*bases))
+        classdict['copy_ancestor_docstring'] = partial(_copy_ancestor_docstring,
+                                                       mro(*bases))
 
         return classdict
 
@@ -25,8 +26,8 @@ class ABCMetaDoc(type, metaclass=abc.ABCMeta):
         if 'copy_ancestor_docstring' in classdict:
 
             # Make sure that class definition hasn't messed with decorators
-            copy_impl = getattr(
-                classdict['copy_ancestor_docstring'], 'func', None)
+            copy_impl = getattr(classdict['copy_ancestor_docstring'], 'func',
+                                None)
             if copy_impl is not _copy_ancestor_docstring:
                 raise RuntimeError(
                     'No copy_ancestor_docstring attribute may be created '

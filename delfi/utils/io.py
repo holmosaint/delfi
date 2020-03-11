@@ -76,7 +76,11 @@ def save_pkl(data, file):
     f.close()
 
 
-def import_from_module_and_run(module_name, function_name, *args, starting_path=None, **kwargs):
+def import_from_module_and_run(module_name,
+                               function_name,
+                               *args,
+                               starting_path=None,
+                               **kwargs):
     """
 
     :param module_name:
@@ -108,7 +112,11 @@ def import_from_module_and_run(module_name, function_name, *args, starting_path=
     return result
 
 
-def run_function_from_file(file, function_name, *args, starting_path=None, **kwargs):
+def run_function_from_file(file,
+                           function_name,
+                           *args,
+                           starting_path=None,
+                           **kwargs):
     """
     Utility to retrieve a function by name from a python file and run it with optional inputs.
 

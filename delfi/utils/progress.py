@@ -2,10 +2,14 @@ from tqdm import tqdm, tqdm_notebook
 
 
 class no_tqdm(object):
+
     def __enter__(self):
+
         class blank(object):
+
             def update(self, x):
                 pass
+
         return blank()
 
     def __exit__(self, type, value, traceback):

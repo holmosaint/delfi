@@ -6,8 +6,17 @@ from delfi.distribution.StudentsT import StudentsT
 
 
 class TransformedNormal(BaseDistribution):
-    def __init__(self, m=None, P=None, U=None, S=None, Pm=None, 
-                 upper=None, lower=None, flags=None, seed=None):
+
+    def __init__(self,
+                 m=None,
+                 P=None,
+                 U=None,
+                 S=None,
+                 Pm=None,
+                 upper=None,
+                 lower=None,
+                 flags=None,
+                 seed=None):
         """multivariate normals with some entries in log- and/or logit-space.
 
         Initialize the pdf given a valid combination of its parameters.
@@ -116,14 +125,14 @@ class TransformedNormal(BaseDistribution):
             raise ValueError('Mean information missing')
 
         self.lower = np.zeros_like(m) if lower is None else np.atleast_1d(lower)
-        self.upper = np.ones_like(m)  if upper is None else np.atleast_1d(upper)
+        self.upper = np.ones_like(m) if upper is None else np.atleast_1d(upper)
 
         assert self.lower.ndim == self.upper.ndim
-        assert self.lower.ndim == 1            
+        assert self.lower.ndim == 1
 
         self.flags = np.zeros_like(m) if flags is None else np.atleast_1d(flags)
 
-        assert self.flags.ndim == 1            
+        assert self.flags.ndim == 1
         assert np.all(np.in1d(np.unique(self.flags), np.arange(3)))
 
         super().__init__(ndim, seed=seed)
@@ -140,18 +149,17 @@ class TransformedNormal(BaseDistribution):
 
     @copy_ancestor_docstring
     def eval(self, x, ii=None, log=True):
-        # See BaseDistribution.py for docstring        
+        # See BaseDistribution.py for docstring
 
-        if x.ndim==1:
-            x = x.reshape(-1,1)
-
+        if x.ndim == 1:
+            x = x.reshape(-1, 1)
 
         if ii is None:
 
             finv = self._finv(x, np.arange(self.ndim))
             xm = finv - self.m
             lp = -np.sum(np.dot(xm, self.P) * xm, axis=1)
-            lp += self.logdetP - self.ndim * np.log(2.0 * np.pi) 
+            lp += self.logdetP - self.ndim * np.log(2.0 * np.pi)
             lp *= 0.5
             lp -= self._logZ(x, np.arange(self.ndim))
 
@@ -161,8 +169,11 @@ class TransformedNormal(BaseDistribution):
             m = self.m[ii]
             S = self.S[ii][:, ii]
 
-            if np.linalg.matrix_rank(S)==len(S[:,0]):
-                lp = scipy.stats.multivariate_normal.logpdf(finv, m, S, allow_singular=True)
+            if np.linalg.matrix_rank(S) == len(S[:, 0]):
+                lp = scipy.stats.multivariate_normal.logpdf(finv,
+                                                            m,
+                                                            S,
+                                                            allow_singular=True)
                 lp = np.array([lp]) if x.shape[0] == 1 else lp
                 lp -= self._logZ(x, ii)
             else:
@@ -183,12 +194,14 @@ class TransformedNormal(BaseDistribution):
         y = x.copy()
 
         # log-transformed entries
-        idx = np.where(self.flags==1.)[0]
-        y[:,idx] = np.exp(y[:,idx])
+        idx = np.where(self.flags == 1.)[0]
+        y[:, idx] = np.exp(y[:, idx])
 
         # logit-transformed entries
-        idx = np.where(self.flags==2.)[0]
-        y[:,idx] = (self.upper[idx] - self.lower[idx]) / (1. + np.exp( - y[:,idx]) ) + self.lower[idx]
+        idx = np.where(self.flags == 2.)[0]
+        y[:,
+          idx] = (self.upper[idx] -
+                  self.lower[idx]) / (1. + np.exp(-y[:, idx])) + self.lower[idx]
 
         return y
 
@@ -198,17 +211,18 @@ class TransformedNormal(BaseDistribution):
 
         #ii = np.arange(self.ndim) if ii is None else ii
 
-        ii_ = np.intersect1d(np.where(self.flags==1.)[0], ii)
+        ii_ = np.intersect1d(np.where(self.flags == 1.)[0], ii)
         idx = np.where(np.in1d(ii, ii_))[0]
         if len(idx) > 0:
-            x[:,idx] = np.log(x[:,idx])
+            x[:, idx] = np.log(x[:, idx])
 
         # logit-transformed entries
-        ii_ = np.intersect1d(np.where(self.flags==2.)[0], ii)
+        ii_ = np.intersect1d(np.where(self.flags == 2.)[0], ii)
         idx = np.where(np.in1d(ii, ii_))[0]
         if len(idx) > 0:
-            x[:,idx] = (x[:,idx] - self.lower[ii_]) / (self.upper[ii_] - self.lower[ii_]) 
-            x[:,idx] = np.log(x[:,idx]) - np.log(1. - x[:,idx])
+            x[:, idx] = (x[:, idx] - self.lower[ii_]) / (self.upper[ii_] -
+                                                         self.lower[ii_])
+            x[:, idx] = np.log(x[:, idx]) - np.log(1. - x[:, idx])
 
         return x
 
@@ -217,17 +231,20 @@ class TransformedNormal(BaseDistribution):
         logZ = 0.
 
         # log-transformed entries
-        ii_ = np.intersect1d(np.where(self.flags==1.)[0], ii)
+        ii_ = np.intersect1d(np.where(self.flags == 1.)[0], ii)
         idx = np.where(np.in1d(ii, ii_))[0]
         if len(idx) > 0:
-            logZ += np.sum(np.log(x[:,idx]), axis=1)
+            logZ += np.sum(np.log(x[:, idx]), axis=1)
 
         # logit-transformed entries
-        ii_ = np.intersect1d(np.where(self.flags==2.)[0], ii)
+        ii_ = np.intersect1d(np.where(self.flags == 2.)[0], ii)
         idx = np.where(np.in1d(ii, ii_))[0]
         if len(idx) > 0:
-            x_ = (x[:,idx] - self.lower[ii_]) / (self.upper[ii_] - self.lower[ii_])
+            x_ = (x[:, idx] - self.lower[ii_]) / (self.upper[ii_] -
+                                                  self.lower[ii_])
             logZ += np.sum(np.log(x_ * (1. - x_)), axis=1)
-            logZ += np.sum(np.log(self.upper[ii_]-self.lower[ii_])) # account for overall volume
+            logZ += np.sum(
+                np.log(self.upper[ii_] -
+                       self.lower[ii_]))  # account for overall volume
 
         return logZ

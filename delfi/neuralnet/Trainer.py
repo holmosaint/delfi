@@ -11,10 +11,10 @@ dtype = theano.config.floatX
 
 
 def block_circulant(x):
-    
+
     n, d = x.shape
     b = x.itemsize
-    
+
     y = as_strided(np.tile(x.flatten(), 2),
                    shape=(n, n, d),
                    strides=(d * b, d * b, b),
@@ -23,8 +23,20 @@ def block_circulant(x):
 
 
 class Trainer:
-    def __init__(self, network, loss, trn_data, trn_inputs, step=lu.adam, lr=0.001, lr_decay=1.0, max_norm=0.1,
-                 monitor=None, val_frac=0.0, assemble_extra_inputs=None, seed=None):
+
+    def __init__(self,
+                 network,
+                 loss,
+                 trn_data,
+                 trn_inputs,
+                 step=lu.adam,
+                 lr=0.001,
+                 lr_decay=1.0,
+                 max_norm=0.1,
+                 monitor=None,
+                 val_frac=0.0,
+                 assemble_extra_inputs=None,
+                 seed=None):
         """Construct and configure the trainer
 
         The trainer takes as inputs a neural network, a loss function and
@@ -96,11 +108,9 @@ class Trainer:
             self.trn_outputs_nodes += monitor_nodes
 
         # function for single update
-        self.make_update = theano.function(
-            inputs=self.trn_inputs,
-            outputs=self.trn_outputs_nodes,
-            updates=self.updates
-        )
+        self.make_update = theano.function(inputs=self.trn_inputs,
+                                           outputs=self.trn_outputs_nodes,
+                                           updates=self.updates)
 
         self.assemble_extra_inputs = assemble_extra_inputs
 
@@ -109,18 +119,21 @@ class Trainer:
         if self.do_validation:
 
             n_trn = int((1 - val_frac) * self.n_trn_data)
-            self.val_data = [data[n_trn:] for data in trn_data].copy()  # copy() might be overly prudent
+            self.val_data = [data[n_trn:] for data in trn_data
+                            ].copy()  # copy() might be overly prudent
             self.trn_data = [data[:n_trn] for data in trn_data].copy()
 
             # compile theano function for validation
-            self.eval_loss = theano.function(inputs=self.trn_inputs, outputs=self.loss)
+            self.eval_loss = theano.function(inputs=self.trn_inputs,
+                                             outputs=self.loss)
             self.best_val_loss = np.inf
 
         # initialize variables
         self.loss = float('inf')
 
     def calc_validation_loss(self, minibatch, strict_batch_size):
-        s, L, n_val, n_batches_used = 0, 0.0, self.val_data[0].shape[0], 0.0  # n_batches_used can be fractional
+        s, L, n_val, n_batches_used = 0, 0.0, self.val_data[0].shape[
+            0], 0.0  # n_batches_used can be fractional
 
         while s < n_val and (not strict_batch_size or s + minibatch <= n_val):
             e = np.minimum(s + minibatch, n_val)
@@ -171,9 +184,9 @@ class Trainer:
 
         # initialize variables
         iter = 0
-        patience_left = patience        
+        patience_left = patience
         if monitor_every is None:
-            monitor_every = min(10 ** 5 / float(self.n_trn_data), 1.0)
+            monitor_every = min(10**5 / float(self.n_trn_data), 1.0)
         logger = sys.stdout
 
         # minibatch size
@@ -182,10 +195,12 @@ class Trainer:
             minibatch = self.n_trn_data
 
         if self.do_validation and strict_batch_size:
-            assert self.val_data[0].shape[0] >= minibatch, "not enough validation samples for a minibatch"
+            assert self.val_data[0].shape[
+                0] >= minibatch, "not enough validation samples for a minibatch"
             if self.val_data[0].shape[0] % minibatch != 0 and verbose:
-                print('{0} validation samples not a multiple of minibatch size {1}, some samples will be wasted'.
-                      format(self.val_data[0].shape[0], minibatch))
+                print(
+                    '{0} validation samples not a multiple of minibatch size {1}, some samples will be wasted'
+                    .format(self.val_data[0].shape[0], minibatch))
 
         maxiter = int(self.n_trn_data / minibatch + 0.5) * epochs
 
@@ -218,13 +233,15 @@ class Trainer:
                 self.lr_op.set_value(lr_epoch)
 
                 # loop over batches
-                for trn_batch in iterate_minibatches(self.trn_data, minibatch,
-                                                     seed=self.gen_newseed(),
-                                                     strict_batch_size=strict_batch_size):
+                for trn_batch in iterate_minibatches(
+                        self.trn_data,
+                        minibatch,
+                        seed=self.gen_newseed(),
+                        strict_batch_size=strict_batch_size):
 
                     if self.assemble_extra_inputs is not None:
                         trn_batch = self.assemble_extra_inputs(tuple(trn_batch))
-                    else: 
+                    else:
                         trn_batch = tuple(trn_batch)
 
                     outputs = self.make_update(*trn_batch)
@@ -244,18 +261,23 @@ class Trainer:
 
                     # check for nan
                     if stop_on_nan and np.isnan(trn_loss):
-                        print('stopping due to NaN value on iteration {0}\n'.format(iter))
+                        print('stopping due to NaN value on iteration {0}\n'.
+                              format(iter))
                         break_flag = True
                         break
 
                     # validation-data tracking of convergence
                     if self.do_validation:
-                        epoch_frac = (iter * minibatch) / self.n_trn_data  # how many epochs so far
-                        prev_epoch_frac = ((iter - 1) * minibatch) / self.n_trn_data
+                        epoch_frac = (
+                            iter * minibatch
+                        ) / self.n_trn_data  # how many epochs so far
+                        prev_epoch_frac = (
+                            (iter - 1) * minibatch) / self.n_trn_data
                         # do validation if we've passed a multiple of monitor_every epochs
                         if iter == 0 or \
                                 np.floor(epoch_frac / monitor_every) != np.floor(prev_epoch_frac / monitor_every):
-                            val_loss = self.calc_validation_loss(minibatch, strict_batch_size)
+                            val_loss = self.calc_validation_loss(
+                                minibatch, strict_batch_size)
                             trn_outputs['val_loss'].append(val_loss)
                             trn_outputs['val_loss_iter'].append(iter)
                             patience_left -= 1
@@ -269,8 +291,8 @@ class Trainer:
                                 if verbose:
                                     print('Stopping at epoch {0}, '
                                           'training loss = {1}, '
-                                          'validation loss = {2}\n'
-                                          .format(epoch_frac, trn_loss, val_loss))
+                                          'validation loss = {2}\n'.format(
+                                              epoch_frac, trn_loss, val_loss))
                                 break
                     pbar.update(minibatch)
                     iter += 1
@@ -293,7 +315,10 @@ class Trainer:
             return self.rng.randint(0, 2**31)
 
 
-def iterate_minibatches(trn_data, minibatch=10, seed=None, strict_batch_size=False):
+def iterate_minibatches(trn_data,
+                        minibatch=10,
+                        seed=None,
+                        strict_batch_size=False):
     """Minibatch iterator
 
     Parameters
@@ -318,7 +343,7 @@ def iterate_minibatches(trn_data, minibatch=10, seed=None, strict_batch_size=Fal
 
     start_idx = 0
 
-    for start_idx in range(0, n_samples-minibatch+1, minibatch):
+    for start_idx in range(0, n_samples - minibatch + 1, minibatch):
         excerpt = indices[start_idx:start_idx + minibatch]
 
         yield (trn_data[k][excerpt] for k in range(len(trn_data)))
@@ -331,10 +356,22 @@ def iterate_minibatches(trn_data, minibatch=10, seed=None, strict_batch_size=Fal
 
 class ActiveTrainer(Trainer):
 
-    def __init__(self, network, loss, trn_data, trn_inputs,
-                 step=lu.adam, lr=0.001, lr_decay=1.0, max_norm=0.1,
-                 monitor=None, val_frac=0., seed=None,               
-                 generator=None, n_atoms=1, moo='resample', obs=None):
+    def __init__(self,
+                 network,
+                 loss,
+                 trn_data,
+                 trn_inputs,
+                 step=lu.adam,
+                 lr=0.001,
+                 lr_decay=1.0,
+                 max_norm=0.1,
+                 monitor=None,
+                 val_frac=0.,
+                 seed=None,
+                 generator=None,
+                 n_atoms=1,
+                 moo='resample',
+                 obs=None):
         """Construct and configure the trainer
 
         The trainer takes as inputs a neural network, a loss function and
@@ -384,41 +421,54 @@ class ActiveTrainer(Trainer):
             raise NotImplementedError
 
         def assemble_extra_inputs(trn_data):
-            return f_assemble_extra_inputs(
-                    trn_data=trn_data, 
-                    generator=generator,
-                    n_atoms=n_atoms,
-                    moo=moo,
-                    obs=obs)
+            return f_assemble_extra_inputs(trn_data=trn_data,
+                                           generator=generator,
+                                           n_atoms=n_atoms,
+                                           moo=moo,
+                                           obs=obs)
 
-        super().__init__(network=network, loss=loss, 
-            trn_data=trn_data, trn_inputs=trn_inputs,
-            step=step, lr=lr,lr_decay=lr_decay, max_norm=max_norm,
-            monitor=monitor, val_frac=val_frac, seed=seed,
-            assemble_extra_inputs=assemble_extra_inputs)
+        super().__init__(network=network,
+                         loss=loss,
+                         trn_data=trn_data,
+                         trn_inputs=trn_inputs,
+                         step=step,
+                         lr=lr,
+                         lr_decay=lr_decay,
+                         max_norm=max_norm,
+                         monitor=monitor,
+                         val_frac=val_frac,
+                         seed=seed,
+                         assemble_extra_inputs=assemble_extra_inputs)
 
-    def assemble_extra_inputs_mdn(self, trn_data, generator, n_atoms,
-                                  moo='resample', obs=None):
+    def assemble_extra_inputs_mdn(self,
+                                  trn_data,
+                                  generator,
+                                  n_atoms,
+                                  moo='resample',
+                                  obs=None):
         """convenience function for assembling input for network training"""
 
         batchsize = trn_data[0].shape[0]
         if moo == 'resample':
             # all-to-all comparison of theta's and x's, n_atoms loss evaluations
 
-            th_nl = np.empty((batchsize, n_atoms, trn_data[0].shape[1]), dtype=dtype)
+            th_nl = np.empty((batchsize, n_atoms, trn_data[0].shape[1]),
+                             dtype=dtype)
             for n in range(batchsize):
-                idx = self.rng.choice(batchsize-1, n_atoms, replace=False) + n + 1
+                idx = self.rng.choice(batchsize - 1, n_atoms,
+                                      replace=False) + n + 1
                 th_nl[n, :, :] = trn_data[0][np.mod(idx, batchsize)]
-            theta_all = np.concatenate(
-                (trn_data[0].reshape((batchsize, 1, -1)),
-                 th_nl), axis=1)
+            theta_all = np.concatenate((trn_data[0].reshape(
+                (batchsize, 1, -1)), th_nl),
+                                       axis=1)
         else:
             raise NotImplemented('mode of operation not supported')
 
         # compute log prior ratios (assuming atomic proposal)
-        lprs = generator.prior.eval(
-            theta_all.reshape(batchsize * (n_atoms + 1), -1),
-            log=True).reshape(batchsize, n_atoms + 1).astype(dtype)
+        lprs = generator.prior.eval(theta_all.reshape(batchsize * (n_atoms + 1),
+                                                      -1),
+                                    log=True).reshape(batchsize,
+                                                      n_atoms + 1).astype(dtype)
 
         # theta_all : (n_batch * (n_atoms + 1)  x n_outputs
         # lprs  : n_batch x (n_atoms+1)
@@ -427,8 +477,12 @@ class ActiveTrainer(Trainer):
 
         return trn_data
 
-    def assemble_extra_inputs_maf(self, trn_data, generator, n_atoms,
-                                  moo='resample', obs=None):
+    def assemble_extra_inputs_maf(self,
+                                  trn_data,
+                                  generator,
+                                  n_atoms,
+                                  moo='resample',
+                                  obs=None):
         """convenience function for assembling input for network training.
         Note the data are assembled in a different ordering than for the MDN.
         """
@@ -441,12 +495,15 @@ class ActiveTrainer(Trainer):
 
                 idx_ = np.empty((batchsize, n_atoms), dtype=int)
                 for n in range(batchsize):
-                    idx_[n] = self.rng.choice(batchsize - 1, n_atoms,
+                    idx_[n] = self.rng.choice(batchsize - 1,
+                                              n_atoms,
                                               replace=False)
-                idx_ = (idx_ + np.arange(1, batchsize + 1).reshape(-1, 1)).reshape(-1)
-                th_nl = np.vstack((trn_data[0], trn_data[0][np.mod(idx_, batchsize)]))
+                idx_ = (idx_ +
+                        np.arange(1, batchsize + 1).reshape(-1, 1)).reshape(-1)
+                th_nl = np.vstack(
+                    (trn_data[0], trn_data[0][np.mod(idx_, batchsize)]))
 
-            else: 
+            else:
 
                 assert n_atoms < batchsize
                 th_nl = block_circulant(trn_data[0])
@@ -455,7 +512,9 @@ class ActiveTrainer(Trainer):
             raise NotImplemented('mode of operation not supported')
 
         # compute log prior ratios (assuming atomic proposal)
-        lprs = generator.prior.eval(th_nl, log=True).reshape(n_atoms + 1, batchsize).astype(dtype)
+        lprs = generator.prior.eval(th_nl,
+                                    log=True).reshape(n_atoms + 1,
+                                                      batchsize).astype(dtype)
 
         # inputs to MAF (summary stats)
         x_nl = np.tile(trn_data[1], (n_atoms + 1, 1))

@@ -5,6 +5,7 @@ from delfi.utils.meta import ABCMetaDoc
 
 
 class BaseSummaryStats(metaclass=ABCMetaDoc):
+
     def __init__(self, seed=None):
         """Abstract base class for summary stats
 

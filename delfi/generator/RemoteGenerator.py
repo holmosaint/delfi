@@ -6,26 +6,27 @@ import numpy as np
 from delfi.generator.Default import Default
 
 
-def run_remote(simulator_class,
-               summary_class,
-               prior,  # might still be relevant with proposals due to rejection
-               n_samples,
-               hostname,
-               username,
-               simulator_args=None,
-               simulator_kwargs=None,
-               summary_args=None,
-               summary_kwargs=None,
-               remote_python_executable=None,
-               remote_work_path=None,
-               local_work_path=None,
-               proposal=None,  # use prior by default
-               n_workers=None,  # use number of remote cpus by default
-               generator_seed=None,
-               use_slurm=False,  # use the job manager with sbatch
-               slurm_options=None,
-               save_every=None,
-               **generator_kwargs):
+def run_remote(
+    simulator_class,
+    summary_class,
+    prior,  # might still be relevant with proposals due to rejection
+    n_samples,
+    hostname,
+    username,
+    simulator_args=None,
+    simulator_kwargs=None,
+    summary_args=None,
+    summary_kwargs=None,
+    remote_python_executable=None,
+    remote_work_path=None,
+    local_work_path=None,
+    proposal=None,  # use prior by default
+    n_workers=None,  # use number of remote cpus by default
+    generator_seed=None,
+    use_slurm=False,  # use the job manager with sbatch
+    slurm_options=None,
+    save_every=None,
+    **generator_kwargs):
     """
     Create a MPGenerator on a remote server and generate samples.
 
@@ -83,37 +84,59 @@ def run_remote(simulator_class,
     samplefile_remote = os.path.join(remote_work_path,
                                      'remote_samples_{0}.pickle'.format(uu))
 
-    data = dict(simulator_class=simulator_class, simulator_args=simulator_args, simulator_kwargs=simulator_kwargs,
-                summary_class=summary_class, summary_args=summary_args, summary_kwargs=summary_kwargs,
-                prior=prior, proposal=proposal, n_samples=n_samples,
+    data = dict(simulator_class=simulator_class,
+                simulator_args=simulator_args,
+                simulator_kwargs=simulator_kwargs,
+                summary_class=summary_class,
+                summary_args=summary_args,
+                summary_kwargs=summary_kwargs,
+                prior=prior,
+                proposal=proposal,
+                n_samples=n_samples,
                 generator_seed=generator_seed,
-                n_workers=n_workers, generator_kwargs=generator_kwargs,
-                samplefile=samplefile_remote, use_slurm=use_slurm,
+                n_workers=n_workers,
+                generator_kwargs=generator_kwargs,
+                samplefile=samplefile_remote,
+                use_slurm=use_slurm,
                 python_executable=remote_python_executable,
-                slurm_options=slurm_options, save_every=save_every)
+                slurm_options=slurm_options,
+                save_every=save_every)
 
     with open(datafile_local, 'wb') as f:
         pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     # copy the data file to the remote host
-    result = subprocess.run(['scp', datafile_local, '{0}@{1}:{2}'.format(username, hostname, datafile_remote)],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    assert result.returncode == 0, "failed to copy data file to remote host: {0}".format(result.stderr.decode())
+    result = subprocess.run([
+        'scp', datafile_local, '{0}@{1}:{2}'.format(username, hostname,
+                                                    datafile_remote)
+    ],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    assert result.returncode == 0, "failed to copy data file to remote host: {0}".format(
+        result.stderr.decode())
 
     # generate samples remotely
     python_commands = 'from delfi.generator.MPGenerator import ' \
         'mpgen_from_file; mpgen_from_file(\'{0}\')'.format(datafile_remote)
 
-    remote_command = '{0} -c \"{1}\"'.format(remote_python_executable, python_commands)
+    remote_command = '{0} -c \"{1}\"'.format(remote_python_executable,
+                                             python_commands)
 
     result = subprocess.run(['ssh', hostname, '-l', username, remote_command],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    assert result.returncode == 0, "failed to run code on remote host: {0}".format(result.stderr.decode())
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    assert result.returncode == 0, "failed to run code on remote host: {0}".format(
+        result.stderr.decode())
 
     # copy samples back to local host
-    result = subprocess.run(['scp', '{0}@{1}:{2}'.format(username, hostname, samplefile_remote), samplefile_local],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    assert result.returncode == 0, "failed to copy samples file from remote host: {0}".format(result.stderr.decode())
+    result = subprocess.run([
+        'scp', '{0}@{1}:{2}'.format(username, hostname, samplefile_remote),
+        samplefile_local
+    ],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    assert result.returncode == 0, "failed to copy samples file from remote host: {0}".format(
+        result.stderr.decode())
 
     with open(samplefile_local, 'rb') as f:
         samples = pickle.load(f)
@@ -121,22 +144,39 @@ def run_remote(simulator_class,
     # clean up by deleting data/sample files on remote/local machines
     os.remove(datafile_local)
     os.remove(samplefile_local)
-    result = subprocess.run(['ssh', hostname, '-l', username, 'rm {0} && rm {1}'.format(datafile_remote,
-                             samplefile_remote)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    assert result.returncode == 0, "failed to delete file(s) from remote host: {0}".format(result.stderr.decode())
+    result = subprocess.run([
+        'ssh', hostname, '-l', username, 'rm {0} && rm {1}'.format(
+            datafile_remote, samplefile_remote)
+    ],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    assert result.returncode == 0, "failed to delete file(s) from remote host: {0}".format(
+        result.stderr.decode())
 
-    task_time = None if 'task_time' not in samples.keys() else samples['task_time']
+    task_time = None if 'task_time' not in samples.keys(
+    ) else samples['task_time']
     return samples['params'], samples['stats'], samples['time'], task_time
 
 
 class RemoteGenerator(Default):
+
     def __init__(self,
-                 simulator_class, prior, summary_class,
-                 hostname, username,
-                 simulator_args=None, simulator_kwargs=None, summary_args=None, summary_kwargs=None,
+                 simulator_class,
+                 prior,
+                 summary_class,
+                 hostname,
+                 username,
+                 simulator_args=None,
+                 simulator_kwargs=None,
+                 summary_args=None,
+                 summary_kwargs=None,
                  save_every=None,
-                 remote_python_executable=None, use_slurm=False, slurm_options=None,
-                 local_work_path=None, remote_work_path=None, persistent=False,
+                 remote_python_executable=None,
+                 use_slurm=False,
+                 slurm_options=None,
+                 local_work_path=None,
+                 remote_work_path=None,
+                 persistent=False,
                  seed=None):
         """
         Generator that creates an MPGenerator on a remote server and uses that
@@ -177,31 +217,33 @@ class RemoteGenerator(Default):
 
         samples_remaining, params, stats = n_samples, None, None
         while samples_remaining > 0:
-            next_params, next_stats, time, task_time = run_remote(self.simulator_class,
-                                                                  self.summary_class,
-                                                                  self.prior,
-                                                                  n_samples,
-                                                                  hostname=self.hostname,
-                                                                  username=self.username,
-                                                                  simulator_args=self.simulator_args,
-                                                                  simulator_kwargs=self.simulator_kwargs,
-                                                                  summary_args=self.summary_args,
-                                                                  summary_kwargs=self.summary_kwargs,
-                                                                  remote_python_executable=self.remote_python_executable,
-                                                                  remote_work_path=self.remote_work_path,
-                                                                  local_work_path=self.local_work_path,
-                                                                  proposal=self.proposal,
-                                                                  n_workers=n_workers,
-                                                                  generator_seed=self.gen_newseed(),
-                                                                  use_slurm=self.use_slurm,
-                                                                  save_every=self.save_every,
-                                                                  slurm_options=self.slurm_options,
-                                                                  **kwargs)
+            next_params, next_stats, time, task_time = run_remote(
+                self.simulator_class,
+                self.summary_class,
+                self.prior,
+                n_samples,
+                hostname=self.hostname,
+                username=self.username,
+                simulator_args=self.simulator_args,
+                simulator_kwargs=self.simulator_kwargs,
+                summary_args=self.summary_args,
+                summary_kwargs=self.summary_kwargs,
+                remote_python_executable=self.remote_python_executable,
+                remote_work_path=self.remote_work_path,
+                local_work_path=self.local_work_path,
+                proposal=self.proposal,
+                n_workers=n_workers,
+                generator_seed=self.gen_newseed(),
+                use_slurm=self.use_slurm,
+                save_every=self.save_every,
+                slurm_options=self.slurm_options,
+                **kwargs)
             self.time, self.task_time = time, task_time
             if params is None:
                 params, stats = next_params, next_stats
             else:
-                params, stats = np.vstack((params, next_params)), np.vstack((stats, next_stats))
+                params, stats = np.vstack((params, next_params)), np.vstack(
+                    (stats, next_stats))
             samples_remaining -= next_params.shape[0]
 
             if not persistent:

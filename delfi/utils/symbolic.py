@@ -37,11 +37,15 @@ def mog_LL(y, la, ms, Ps, ldetPs, from_cholesky=False):
     """
     # data likelihood for each Gaussian component (except for scale factor)
     if from_cholesky:
-        lps = [-0.5 * tensorQF_chol(P, y - m) + ldetP
-               for m, P, ldetP in zip(ms, Ps, ldetPs)]
+        lps = [
+            -0.5 * tensorQF_chol(P, y - m) + ldetP
+            for m, P, ldetP in zip(ms, Ps, ldetPs)
+        ]
     else:
-        lps = [-0.5 * (tensorQF(P, y - m) - ldetP)
-               for m, P, ldetP in zip(ms, Ps, ldetPs)]
+        lps = [
+            -0.5 * (tensorQF(P, y - m) - ldetP)
+            for m, P, ldetP in zip(ms, Ps, ldetPs)
+        ]
 
     # include missing scale factor
     logpdf_offset = -0.5 * np.log(2 * np.pi) * y.shape[1]
@@ -129,4 +133,4 @@ def tensorQF_chol(U, x):
     This will usually be called on a U resulting from a Cholesky factorization.
     See tensorQF for further details.
     """
-    return tt.sum(tt.sum(x.dimshuffle([0, 'x', 1]) * U, axis=2) ** 2, axis=1)
+    return tt.sum(tt.sum(x.dimshuffle([0, 'x', 1]) * U, axis=2)**2, axis=1)

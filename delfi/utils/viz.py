@@ -17,6 +17,7 @@ except:
 try:
     from seaborn.utils import despine
 except:
+
     def despine(*args, **kwargs):
         pass
 
@@ -30,9 +31,8 @@ def loss(losses, key='trn', loss_clipping=1000., title=''):
     clip_idx = np.where(y > loss_clipping)[0]
     if len(clip_idx) > 0:
         print(
-            'warning: loss exceeds threshold of {:.2f} in total {} time(s); values will be clipped'.format(
-                loss_clipping,
-                len(clip_idx)))
+            'warning: loss exceeds threshold of {:.2f} in total {} time(s); values will be clipped'
+            .format(loss_clipping, len(clip_idx)))
 
     y[clip_idx] = loss_clipping
 
@@ -131,10 +131,25 @@ def probs2contours(probs, levels):
     return contours
 
 
-def plot_pdf(pdf1, lims=None, pdf2=None, gt=None, contours=False, levels=(0.68, 0.95),
-             resolution=500, labels_params=None, ticks=False, diag_only=False,
-             diag_only_cols=4, diag_only_rows=4, figsize=(5, 5), fontscale=1,
-             partial=False, samples=None, col1='k', col2='b', col3='g'):
+def plot_pdf(pdf1,
+             lims=None,
+             pdf2=None,
+             gt=None,
+             contours=False,
+             levels=(0.68, 0.95),
+             resolution=500,
+             labels_params=None,
+             ticks=False,
+             diag_only=False,
+             diag_only_cols=4,
+             diag_only_rows=4,
+             figsize=(5, 5),
+             fontscale=1,
+             partial=False,
+             samples=None,
+             col1='k',
+             col2='b',
+             col3='g'):
     """Plots marginals of a pdf, for each variable and pair of variables.
 
     Parameters
@@ -198,7 +213,9 @@ def plot_pdf(pdf1, lims=None, pdf2=None, gt=None, contours=False, levels=(0.68, 
         fig, ax = plt.subplots(1, 1, facecolor='white', figsize=figsize)
 
         if samples is not None:
-            ax.hist(samples[i, :], bins=100, normed=True,
+            ax.hist(samples[i, :],
+                    bins=100,
+                    normed=True,
                     color=col1,
                     edgecolor=col1)
 
@@ -247,7 +264,9 @@ def plot_pdf(pdf1, lims=None, pdf2=None, gt=None, contours=False, levels=(0.68, 
 
                 if i == j:
                     if samples is not None:
-                        ax[i, j].hist(samples[i, :], bins=100, normed=True,
+                        ax[i, j].hist(samples[i, :],
+                                      bins=100,
+                                      normed=True,
                                       color=col1,
                                       edgecolor=col1)
                     xx = np.linspace(lims[i, 0], lims[i, 1], resolution)
@@ -271,18 +290,31 @@ def plot_pdf(pdf1, lims=None, pdf2=None, gt=None, contours=False, levels=(0.68, 
                     ax[r, c].set_ylim([0, ax[r, c].get_ylim()[1]])
 
                     if gt is not None:
-                        ax[r, c].vlines(
-                            gt[i], 0, ax[r, c].get_ylim()[1], color='r')
+                        ax[r, c].vlines(gt[i],
+                                        0,
+                                        ax[r, c].get_ylim()[1],
+                                        color='r')
 
                     if ticks:
                         ax[r, c].get_yaxis().set_tick_params(
-                            which='both', direction='out', labelsize=fontscale * 15)
+                            which='both',
+                            direction='out',
+                            labelsize=fontscale * 15)
                         ax[r, c].get_xaxis().set_tick_params(
-                            which='both', direction='out', labelsize=fontscale * 15)
-#                         ax[r, c].locator_params(nbins=3)
-                        ax[r, c].set_xticks(np.linspace(
-                            lims[i, 0]+0.15*np.abs(lims[i, 0]-lims[j, 1]), lims[j, 1]-0.15*np.abs(lims[i, 0]-lims[j, 1]), 2))
-                        ax[r, c].set_yticks(np.linspace(0+0.15*np.abs(0-max(pp)), max(pp)-0.15*np.abs(0-max(pp)), 2))
+                            which='both',
+                            direction='out',
+                            labelsize=fontscale * 15)
+                        #                         ax[r, c].locator_params(nbins=3)
+                        ax[r, c].set_xticks(
+                            np.linspace(
+                                lims[i, 0] +
+                                0.15 * np.abs(lims[i, 0] - lims[j, 1]),
+                                lims[j, 1] -
+                                0.15 * np.abs(lims[i, 0] - lims[j, 1]), 2))
+                        ax[r, c].set_yticks(
+                            np.linspace(0 + 0.15 * np.abs(0 - max(pp)),
+                                        max(pp) - 0.15 * np.abs(0 - max(pp)),
+                                        2))
                         ax[r, c].xaxis.set_major_formatter(
                             mpl.ticker.FormatStrFormatter('%.1f'))
                         ax[r, c].yaxis.set_major_formatter(
@@ -292,8 +324,8 @@ def plot_pdf(pdf1, lims=None, pdf2=None, gt=None, contours=False, levels=(0.68, 
                         ax[r, c].get_yaxis().set_ticks([])
 
                     if labels_params is not None:
-                        ax[r, c].set_xlabel(
-                            labels_params[i], fontsize=fontscale * 20)
+                        ax[r, c].set_xlabel(labels_params[i],
+                                            fontsize=fontscale * 20)
                     else:
                         ax[r, c].set_xlabel([])
 
@@ -302,10 +334,14 @@ def plot_pdf(pdf1, lims=None, pdf2=None, gt=None, contours=False, levels=(0.68, 
                     ax[r, c].set_aspect((x1 - x0) / (y1 - y0))
 
                     if partial and i == rows - 1:
-                        ax[i, j].text(x1 + (x1 - x0) / 6., (y0 + y1) /
-                                      2., '...', fontsize=fontscale * 25)
-                        plt.text(x1 + (x1 - x0) / 8.4, y0 - (y1 - y0) /
-                                 6., '...', fontsize=fontscale * 25, rotation=-45)
+                        ax[i, j].text(x1 + (x1 - x0) / 6., (y0 + y1) / 2.,
+                                      '...',
+                                      fontsize=fontscale * 25)
+                        plt.text(x1 + (x1 - x0) / 8.4,
+                                 y0 - (y1 - y0) / 6.,
+                                 '...',
+                                 fontsize=fontscale * 25,
+                                 rotation=-45)
 
                 else:
                     if diag_only:
@@ -324,30 +360,50 @@ def plot_pdf(pdf1, lims=None, pdf2=None, gt=None, contours=False, levels=(0.68, 
 
                     if samples is not None:
                         H, xedges, yedges = np.histogram2d(
-                            samples[i, :], samples[j, :], bins=30, range=[
-                            [lims[i, 0], lims[i, 1]], [lims[j, 0], lims[j, 1]]], normed=True)
-                        ax[i, j].imshow(H, origin='lower', extent=[
-                                        yedges[0], yedges[-1], xedges[0], xedges[-1]])
+                            samples[i, :],
+                            samples[j, :],
+                            bins=30,
+                            range=[[lims[i, 0], lims[i, 1]],
+                                   [lims[j, 0], lims[j, 1]]],
+                            normed=True)
+                        ax[i, j].imshow(H,
+                                        origin='lower',
+                                        extent=[
+                                            yedges[0], yedges[-1], xedges[0],
+                                            xedges[-1]
+                                        ])
 
                     xx = np.linspace(lims[i, 0], lims[i, 1], resolution)
                     yy = np.linspace(lims[j, 0], lims[j, 1], resolution)
                     X, Y = np.meshgrid(xx, yy)
                     xy = np.concatenate(
-                        [X.reshape([-1, 1]), Y.reshape([-1, 1])], axis=1)
+                        [X.reshape([-1, 1]),
+                         Y.reshape([-1, 1])], axis=1)
                     pp = pdf.eval(xy, ii=[i, j], log=False)
                     pp = pp.reshape(list(X.shape))
                     if contours:
-                        ax[i, j].contour(Y, X, probs2contours(
-                            pp, levels), levels, colors=('w', 'y'))
+                        ax[i, j].contour(Y,
+                                         X,
+                                         probs2contours(pp, levels),
+                                         levels,
+                                         colors=('w', 'y'))
                     else:
-                        ax[i, j].imshow(pp.T, origin='lower',
-                                        extent=[lims[j, 0], lims[j, 1], lims[i, 0], lims[i, 1]],
-                                        aspect='auto', interpolation='none')
+                        ax[i, j].imshow(pp.T,
+                                        origin='lower',
+                                        extent=[
+                                            lims[j, 0], lims[j, 1], lims[i, 0],
+                                            lims[i, 1]
+                                        ],
+                                        aspect='auto',
+                                        interpolation='none')
                     ax[i, j].set_xlim(lims[j])
                     ax[i, j].set_ylim(lims[i])
 
                     if gt is not None:
-                        ax[i, j].plot(gt[j], gt[i], 'r.', ms=10,
+                        ax[i, j].plot(gt[j],
+                                      gt[i],
+                                      'r.',
+                                      ms=10,
                                       markeredgewidth=0.0)
 
                     ax[i, j].get_xaxis().set_ticks([])
@@ -359,8 +415,9 @@ def plot_pdf(pdf1, lims=None, pdf2=None, gt=None, contours=False, levels=(0.68, 
                     ax[i, j].set_aspect((x1 - x0) / (y1 - y0))
 
                     if partial and j == cols - 1:
-                        ax[i, j].text(x1 + (x1 - x0) / 6., (y0 + y1) /
-                                      2., '...', fontsize=fontscale * 25)
+                        ax[i, j].text(x1 + (x1 - x0) / 6., (y0 + y1) / 2.,
+                                      '...',
+                                      fontsize=fontscale * 25)
 
                 if diag_only and c == cols - 1:
                     c = -1
@@ -400,8 +457,10 @@ def plot_hist_marginals(data, lims=None, gt=None):
                     if lims is not None:
                         ax[i, j].set_xlim(lims[i])
                     if gt is not None:
-                        ax[i, j].vlines(
-                            gt[i], 0, ax[i, j].get_ylim()[1], color='r')
+                        ax[i, j].vlines(gt[i],
+                                        0,
+                                        ax[i, j].get_ylim()[1],
+                                        color='r')
 
                 else:
                     ax[i, j].plot(data[:, i], data[:, j], 'k.', ms=2)
@@ -412,7 +471,6 @@ def plot_hist_marginals(data, lims=None, gt=None):
                         ax[i, j].plot(gt[i], gt[j], 'r.', ms=8)
 
     return fig, ax
-
 
 
 def _update(d, u):
@@ -428,8 +486,12 @@ def _update(d, u):
     return d
 
 
-def _format_axis(ax, xhide=True, yhide=True, xlabel='', ylabel='',
-        tickformatter=None):
+def _format_axis(ax,
+                 xhide=True,
+                 yhide=True,
+                 xlabel='',
+                 ylabel='',
+                 tickformatter=None):
     for loc in ['right', 'top', 'left', 'bottom']:
         ax.spines[loc].set_visible(False)
     if xhide:
@@ -464,8 +526,8 @@ def samples_nd(samples, points=[], **kwargs):
     """
     opts = {
         # what to plot on triagonal and diagonal subplots
-        'upper': 'hist',   # hist/scatter/None
-        'diag': 'hist',    # hist/None
+        'upper': 'hist',  # hist/scatter/None
+        'diag': 'hist',  # hist/None
         #'lower': None,     # hist/scatter/None  # TODO: implement
 
         # title and legend
@@ -473,9 +535,9 @@ def samples_nd(samples, points=[], **kwargs):
         'legend': False,
 
         # labels
-        'labels': [],         # for dimensions
+        'labels': [],  # for dimensions
         'labels_points': [],  # for points
-        'labels_samples': [], # for samples
+        'labels_samples': [],  # for samples
 
         # colors
         'samples_colors': plt.rcParams['axes.prop_cycle'].by_key()['color'],
@@ -532,8 +594,7 @@ def samples_nd(samples, points=[], **kwargs):
         'plot_offdiag': {},
 
         # formatting points (scale, markers)
-        'points_diag': {
-        },
+        'points_diag': {},
         'points_offdiag': {
             'marker': '.',
             'markersize': 20,
@@ -544,15 +605,15 @@ def samples_nd(samples, points=[], **kwargs):
 
         # other options
         'fig_size': (10, 10),
-        'fig_bg_colors':
-            {'upper': None,
-             'diag': None,
-             'lower': None},
+        'fig_bg_colors': {
+            'upper': None,
+            'diag': None,
+            'lower': None
+        },
         'fig_subplots_adjust': {
             'top': 0.9,
         },
-        'subplots': {
-        },
+        'subplots': {},
         'despine': {
             'offset': 5,
         },
@@ -585,7 +646,7 @@ def samples_nd(samples, points=[], **kwargs):
 
     # Prepare labels
     if opts['labels'] == [] or opts['labels'] is None:
-        labels_dim = ['dim {}'.format(i+1) for i in range(dim)]
+        labels_dim = ['dim {}'.format(i + 1) for i in range(dim)]
     else:
         labels_dim = opts['labels']
 
@@ -627,11 +688,10 @@ def samples_nd(samples, points=[], **kwargs):
 
     # Style
     if opts['style'] in ['dark', 'light']:
-        style = os.path.join(
-            os.path.dirname(__file__),
-            'matplotlib_{}.style'.format(opts['style']))
+        style = os.path.join(os.path.dirname(__file__),
+                             'matplotlib_{}.style'.format(opts['style']))
     else:
-        style = opts['style'];
+        style = opts['style']
 
     # Apply custom style as context
     with mpl.rc_context(fname=style):
@@ -650,7 +710,10 @@ def samples_nd(samples, points=[], **kwargs):
                 raise NotImplementedError
             rows = cols = len(subset)
 
-        fig, axes = plt.subplots(rows, cols, figsize=opts['fig_size'], **opts['subplots'])
+        fig, axes = plt.subplots(rows,
+                                 cols,
+                                 figsize=opts['fig_size'],
+                                 **opts['subplots'])
         axes = axes.reshape(rows, cols)
 
         # Style figure
@@ -685,8 +748,7 @@ def samples_nd(samples, points=[], **kwargs):
                 # Background color
                 if current in opts['fig_bg_colors'] and \
                     opts['fig_bg_colors'][current] is not None:
-                    ax.set_facecolor(
-                        opts['fig_bg_colors'][current])
+                    ax.set_facecolor(opts['fig_bg_colors'][current])
 
                 # Axes
                 if opts[current] is None:
@@ -695,59 +757,62 @@ def samples_nd(samples, points=[], **kwargs):
 
                 # Limits
                 if limits is not None:
-                    ax.set_xlim(
-                        (limits[col][0], limits[col][1]))
+                    ax.set_xlim((limits[col][0], limits[col][1]))
                     if current is not 'diag':
-                        ax.set_ylim(
-                            (limits[row][0], limits[row][1]))
+                        ax.set_ylim((limits[row][0], limits[row][1]))
                 xmin, xmax = ax.get_xlim()
                 ymin, ymax = ax.get_ylim()
 
                 # Ticks
                 if ticks is not None:
-                    ax.set_xticks(
-                        (ticks[col][0], ticks[col][1]))
+                    ax.set_xticks((ticks[col][0], ticks[col][1]))
                     if current is not 'diag':
-                        ax.set_yticks(
-                            (ticks[row][0], ticks[row][1]))
+                        ax.set_yticks((ticks[row][0], ticks[row][1]))
 
                 # Despine
                 despine(ax=ax, **opts['despine'])
 
                 # Formatting axes
                 if current == 'diag':  # off-diagnoals
-                    if opts['lower'] is None or col == dim-1:
-                        _format_axis(ax, xhide=False, xlabel=labels_dim[col],
-                            yhide=True, tickformatter=opts['tickformatter'])
+                    if opts['lower'] is None or col == dim - 1:
+                        _format_axis(ax,
+                                     xhide=False,
+                                     xlabel=labels_dim[col],
+                                     yhide=True,
+                                     tickformatter=opts['tickformatter'])
                     else:
                         _format_axis(ax, xhide=True, yhide=True)
                 else:  # off-diagnoals
-                    if row == dim-1:
-                        _format_axis(ax, xhide=False, xlabel=labels_dim[col],
-                            yhide=True, tickformatter=opts['tickformatter'])
+                    if row == dim - 1:
+                        _format_axis(ax,
+                                     xhide=False,
+                                     xlabel=labels_dim[col],
+                                     yhide=True,
+                                     tickformatter=opts['tickformatter'])
                     else:
                         _format_axis(ax, xhide=True, yhide=True)
                 if opts['tick_labels'] is not None:
-                    ax.set_xticklabels(
-                        (str(opts['tick_labels'][col][0]), str(opts['tick_labels'][col][1])))
+                    ax.set_xticklabels((str(opts['tick_labels'][col][0]),
+                                        str(opts['tick_labels'][col][1])))
 
                 # Diagonals
                 if current == 'diag':
                     if len(samples) > 0:
                         for n, v in enumerate(samples):
                             if opts['diag'][n] == 'hist':
-                                h = plt.hist(
-                                    v[:, row],
-                                    color=opts['samples_colors'][n],
-                                    **opts['hist_diag']
-                                )
+                                h = plt.hist(v[:, row],
+                                             color=opts['samples_colors'][n],
+                                             **opts['hist_diag'])
                             elif opts['diag'][n] == 'kde':
                                 density = gaussian_kde(
                                     v[:, row],
                                     bw_method=opts['kde_diag']['bw_method'])
-                                xs = np.linspace(xmin, xmax, opts['kde_diag']['bins'])
+                                xs = np.linspace(xmin, xmax,
+                                                 opts['kde_diag']['bins'])
                                 ys = density(xs)
-                                h = plt.plot(xs, ys,
+                                h = plt.plot(
+                                    xs,
+                                    ys,
                                     color=opts['samples_colors'][n],
                                 )
                             else:
@@ -756,85 +821,106 @@ def samples_nd(samples, points=[], **kwargs):
                     if len(points) > 0:
                         extent = ax.get_ylim()
                         for n, v in enumerate(points):
-                            h = plt.plot(
-                                [v[:, row], v[:, row]],
-                                extent,
-                                color=opts['points_colors'][n],
-                                **opts['points_diag']
-                            )
+                            h = plt.plot([v[:, row], v[:, row]],
+                                         extent,
+                                         color=opts['points_colors'][n],
+                                         **opts['points_diag'])
 
                 # Off-diagonals
                 else:
 
                     if len(samples) > 0:
                         for n, v in enumerate(samples):
-                            if opts['upper'][n] == 'hist' or opts['upper'][n] == 'hist2d':
+                            if opts['upper'][n] == 'hist' or opts['upper'][
+                                    n] == 'hist2d':
                                 hist, xedges, yedges = np.histogram2d(
-                                    v[:, col], v[:, row], range=[
-                                        [limits[col][0], limits[col][1]],
-                                        [limits[row][0], limits[row][1]]],
+                                    v[:, col],
+                                    v[:, row],
+                                    range=[[limits[col][0], limits[col][1]],
+                                           [limits[row][0], limits[row][1]]],
                                     **opts['hist_offdiag'])
                                 h = plt.imshow(hist.T,
-                                    origin='lower',
-                                    extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]],
-                                    aspect='auto'
-                                )
+                                               origin='lower',
+                                               extent=[
+                                                   xedges[0], xedges[-1],
+                                                   yedges[0], yedges[-1]
+                                               ],
+                                               aspect='auto')
 
-                            elif opts['upper'][n] in ['kde', 'kde2d', 'contour', 'contourf']:
-                                density = gaussian_kde(v[:, [col, row]].T, bw_method=opts['kde_offdiag']['bw_method'])
-                                X, Y = np.meshgrid(np.linspace(limits[col][0], limits[col][1], opts['kde_offdiag']['bins']),
-                                                   np.linspace(limits[row][0], limits[row][1], opts['kde_offdiag']['bins']))
+                            elif opts['upper'][n] in [
+                                    'kde', 'kde2d', 'contour', 'contourf'
+                            ]:
+                                density = gaussian_kde(
+                                    v[:, [col, row]].T,
+                                    bw_method=opts['kde_offdiag']['bw_method'])
+                                X, Y = np.meshgrid(
+                                    np.linspace(limits[col][0], limits[col][1],
+                                                opts['kde_offdiag']['bins']),
+                                    np.linspace(limits[row][0], limits[row][1],
+                                                opts['kde_offdiag']['bins']))
                                 positions = np.vstack([X.ravel(), Y.ravel()])
                                 Z = np.reshape(density(positions).T, X.shape)
 
-                                if opts['upper'][n] == 'kde' or opts['upper'][n] == 'kde2d':
-                                    h = plt.imshow(Z,
-                                        extent=[limits[col][0], limits[col][1], limits[row][0], limits[row][1]],
+                                if opts['upper'][n] == 'kde' or opts['upper'][
+                                        n] == 'kde2d':
+                                    h = plt.imshow(
+                                        Z,
+                                        extent=[
+                                            limits[col][0], limits[col][1],
+                                            limits[row][0], limits[row][1]
+                                        ],
                                         origin='lower',
                                         aspect='auto',
                                     )
                                 elif opts['upper'][n] == 'contour':
-                                    Z = (Z - Z.min())/(Z.max() - Z.min())
-                                    h = plt.contour(X, Y, Z,
+                                    Z = (Z - Z.min()) / (Z.max() - Z.min())
+                                    h = plt.contour(
+                                        X,
+                                        Y,
+                                        Z,
                                         origin='lower',
-                                        extent=[limits[col][0], limits[col][1], limits[row][0], limits[row][1]],
+                                        extent=[
+                                            limits[col][0], limits[col][1],
+                                            limits[row][0], limits[row][1]
+                                        ],
                                         colors=opts['samples_colors'][n],
-                                        **opts['contour_offdiag']
-                                    )
+                                        **opts['contour_offdiag'])
                                 else:
                                     pass
                             elif opts['upper'][n] == 'scatter':
-                                h = plt.scatter(
-                                    v[:, col], v[:, row],
-                                    color=opts['samples_colors'][n],
-                                    **opts['scatter_offdiag']
-                                )
+                                h = plt.scatter(v[:, col],
+                                                v[:, row],
+                                                color=opts['samples_colors'][n],
+                                                **opts['scatter_offdiag'])
                             elif opts['upper'][n] == 'plot':
-                                h = plt.plot(
-                                    v[:, col], v[:, row],
-                                    color=opts['samples_colors'][n],
-                                    **opts['plot_offdiag']
-                                )
+                                h = plt.plot(v[:, col],
+                                             v[:, row],
+                                             color=opts['samples_colors'][n],
+                                             **opts['plot_offdiag'])
                             else:
                                 pass
 
                     if len(points) > 0:
 
                         for n, v in enumerate(points):
-                            h = plt.plot(
-                                v[:, col], v[:, row],
-                                color=opts['points_colors'][n],
-                                **opts['points_offdiag']
-                            )
+                            h = plt.plot(v[:, col],
+                                         v[:, row],
+                                         color=opts['points_colors'][n],
+                                         **opts['points_offdiag'])
 
         if len(subset) < dim:
             for row in range(len(subset)):
-                ax = axes[row, len(subset)-1]
+                ax = axes[row, len(subset) - 1]
                 x0, x1 = ax.get_xlim()
                 y0, y1 = ax.get_ylim()
-                text_kwargs = {'fontsize': plt.rcParams['font.size']*2.}
-                ax.text(x1 + (x1 - x0) / 8., (y0 + y1) / 2., '...', **text_kwargs)
-                if row == len(subset)-1:
-                    ax.text(x1 + (x1 - x0) / 12., y0 - (y1 - y0) / 1.5, '...', rotation=-45, **text_kwargs)
+                text_kwargs = {'fontsize': plt.rcParams['font.size'] * 2.}
+                ax.text(x1 + (x1 - x0) / 8., (y0 + y1) / 2., '...',
+                        **text_kwargs)
+                if row == len(subset) - 1:
+                    ax.text(x1 + (x1 - x0) / 12.,
+                            y0 - (y1 - y0) / 1.5,
+                            '...',
+                            rotation=-45,
+                            **text_kwargs)
 
     return fig, axes

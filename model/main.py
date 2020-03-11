@@ -23,17 +23,19 @@ from Ribon.Franke import get_data_pair_lchirp, SinglePathwayModel
 from Ribon.Franke_feature import get_trace_features
 from Ribon.Ribon_simulation import Ribon, RibonStats
 
+
 def load_data(pilot_file):
     with h5.File(pilot_file, 'r') as f:
         paras = f.get('param_data')[...]
         stats = f.get('stats_data')[...]
     return paras, stats
 
+
 def run(args):
     model_name = args.model_name
     n_summary = args.n_summary
     n_processes = args.n_processes
-    data_file_name = args.store_file
+    store_file = args.store_file
     pilot_samples = args.pilot_samples
     pilot_file = args.pilot_file
     n_train = args.n_train
@@ -87,7 +89,7 @@ def run(args):
                               V0=V0,
                               dim_param=dim_param,
                               seed=np.random.randint(1000)))
-        g = dg.MPGenerator(data_file_name=data_file_name,
+        g = dg.MPGenerator(data_file_name=store_file,
                            models=m,
                            prior=prior,
                            summary=s)
@@ -95,6 +97,7 @@ def run(args):
         # observed data: simulation given true parameters
         obs = m[0].gen_single(true_params)
         obs_stats = s.calc([obs])
+        obs = obs['data']
 
     elif model_name == 'Ribon':
         assert dt == 2, print("dt in Ribon model should be 2 currently")
@@ -105,6 +108,8 @@ def run(args):
         obs_stats = get_trace_features(obs, dt=dt)
 
         dim_param = 9
+
+        true_params = None
 
         param_range = [
             np.array([[0.1, 4]]),  # half of sigmoid
@@ -119,12 +124,9 @@ def run(args):
         ]  # max of gain tau
 
         labels_params = [
-            r'$\text{sigmoid}_{\text{HALF}}$',
-            r'$\text{sigmoid}_{\text{SLOPE}}$',
-            r'$\text{sigmoid}_{\text{MAX}}$', r'$\tau_\text{TF}$',
-            r'$g\_\text{INF}_k$', r'$g\_\text{INF}_k$',
-            r'$g\_\tau_{\text{HALF}}$', r'$g\_\tau_{\text{SLOPE}}$',
-            r'$g\_\tau_{\text{MAX}}$'
+            r'${sigmoid}_{HALF}$', r'${sigmoid}_{SLOPE}$', r'${sigmoid}_{MAX}$',
+            r'$\tau_{TF}$', r'$g\_{INF}_k$', r'$g\_{INF}_k$',
+            r'$g\_\tau_{HALF}$', r'$g\_\tau_{SLOPE}$', r'$g\_\tau_{MAX}$'
         ]
 
         prior_min = np.concatenate(param_range, axis=0)[:, 0]
@@ -153,7 +155,7 @@ def run(args):
         g = dg.MPGenerator(models=m,
                            prior=prior,
                            summary=s,
-                           data_file_name=os.path.join(_dir, data_file_name))
+                           data_file_name=store_file)
 
     else:
         print("Model only supports [HH, Ribon], but got {}".format(model_name))
@@ -190,9 +192,12 @@ def run(args):
     )
 
     fig = plt.figure(figsize=(15, 5))
-
-    plt.plot(log[0]['val'], lw=2, c=b, label='Val')
-    plt.plot(log[0]['loss'], lw=2, c=r, label='Train')
+    plt.plot(log[0]['val_loss_iter'],
+             log[0]['val_loss'],
+             lw=2,
+             c='b',
+             label='Val')
+    plt.plot(log[0]['loss'], lw=2, c='r', label='Train')
     plt.xlabel('iteration')
     plt.ylabel('loss')
     plt.legend()
@@ -204,7 +209,7 @@ def run(args):
         (prior_min.reshape(-1, 1), prior_max.reshape(-1, 1)), axis=1)
 
     posterior_samples = posterior[0].gen(10000)
-
+    np.save(os.path.join(result_dir, 'param_samples.npy'), posterior_samples)
     ###################
     # colors
     hex2rgb = lambda h: tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
@@ -222,6 +227,10 @@ def run(args):
     ###################
 
     # posterior
+    if true_params is not None:
+        true_params = [true_params]
+    else:
+        true_params = []
     fig, axes = samples_nd(posterior_samples,
                            limits=prior_lims,
                            ticks=prior_lims,
@@ -236,7 +245,7 @@ def run(args):
                                'color': col['SNPE']
                            },
                            kde_offdiag={'bins': 50},
-                           points=[true_params],
+                           points=true_params,
                            points_offdiag={'markersize': 5},
                            points_colors=[col['GT']],
                            title='')
@@ -245,8 +254,8 @@ def run(args):
 
     fig = plt.figure(figsize=(7, 5))
 
-    y_obs = obs
-    t = np.arange(y_obs.shape[0])
+    # y_obs = obs
+    t = np.arange(obs.shape[0])
     duration = np.max(t)
 
     num_samp = 200
@@ -255,7 +264,7 @@ def run(args):
     x_samp = posterior[0].gen(n_samples=num_samp)
 
     # reject samples for which prior is zero
-    ind = (x_samp > prior_min) & (x_samp < prior_max)
+    ind = (x_samp >= prior_min) & (x_samp <= prior_max)
     params = x_samp[np.prod(ind, axis=1) == 1]
 
     num_samp = min(2, len(params[:, 0]))
@@ -272,7 +281,7 @@ def run(args):
                  label='sample ' + str(num_samp - i))
 
     # plot observation
-    plt.plot(t, y_obs, '--', lw=2, label='observation')
+    plt.plot(t, obs, '--', lw=2, label='observation')
     plt.xlabel('time (ms)')
     plt.ylabel('voltage (mV)')
 
@@ -284,7 +293,7 @@ def run(args):
               loc='upper right')
 
     ax.set_xticks([0, duration / 2, duration])
-    ax.set_yticks([-80, -20, 40])
+    # ax.set_yticks([-80, -20, 40])
 
     plt.savefig(os.path.join(result_dir, 'result.png'), dpi=400)
 

@@ -3,7 +3,9 @@ import numpy as np
 
 from delfi.summarystats import BaseSummaryStats
 
+
 class MaskedSummaryStats(BaseSummaryStats):
+
     def __init__(self, s, mask, obs, seed=None):
         """ Summary stats with imputed values
 
@@ -27,8 +29,9 @@ class MaskedSummaryStats(BaseSummaryStats):
         self.mask = mask
 
         self.n_summary = np.count_nonzero(self.mask)
-        assert len(mask) == s.n_summary, "Summary statistics mask has the wrong size"
-        
+        assert len(
+            mask) == s.n_summary, "Summary statistics mask has the wrong size"
+
         self.obs = obs
 
     def calc(self, repetition_list):

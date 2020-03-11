@@ -5,6 +5,7 @@ from delfi.generator.BaseGenerator import BaseGenerator
 
 
 class Default(BaseGenerator):
+
     @copy_ancestor_docstring
     def _feedback_proposed_param(self, param):
         # See BaseGenerator for docstring

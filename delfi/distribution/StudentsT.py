@@ -5,6 +5,7 @@ from delfi.distribution.BaseDistribution import BaseDistribution
 
 
 class StudentsT(BaseDistribution):
+
     def __init__(self, m, S, dof, seed=None):
         """Student's T distribution
 
@@ -22,7 +23,7 @@ class StudentsT(BaseDistribution):
         m = np.asarray(m)
         self.m = m
         self.dof = dof
-        assert(dof > 0)
+        assert (dof > 0)
 
         S = np.asarray(S)
         self.P = np.linalg.inv(S)
@@ -40,8 +41,8 @@ class StudentsT(BaseDistribution):
     @property
     def std(self):
         """Standard deviations of marginals"""
-        return np.sqrt((self.dof / (self.dof - 2)) *
-                       np.diag(self.S)).reshape(-1)
+        return np.sqrt(
+            (self.dof / (self.dof - 2)) * np.diag(self.S)).reshape(-1)
 
     @copy_ancestor_docstring
     def eval(self, x, ii=None, log=True):
@@ -63,6 +64,6 @@ class StudentsT(BaseDistribution):
     def gen(self, n_samples=1):
         # See BaseDistribution.py for docstring
         u = self.rng.chisquare(self.dof, n_samples) / self.dof
-        y = self.rng.multivariate_normal(np.zeros(self.ndim),
-                                          self.S, (n_samples,))
+        y = self.rng.multivariate_normal(np.zeros(self.ndim), self.S,
+                                         (n_samples,))
         return self.m + y / np.sqrt(u)[:, None]

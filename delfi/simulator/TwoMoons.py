@@ -27,9 +27,16 @@ def default_mapfunc_Jacobian_determinant(theta, p):
 
 
 class TwoMoons(BaseSimulator):
-    def __init__(self, mean_radius=1.0, sd_radius=0.1, baseoffset=1.0,
-                 mapfunc=None, mapfunc_inverse=None, mapfunc_Jacobian_determinant=None,  # transforms noise dist.
-                 seed=None):
+
+    def __init__(
+        self,
+        mean_radius=1.0,
+        sd_radius=0.1,
+        baseoffset=1.0,
+        mapfunc=None,
+        mapfunc_inverse=None,
+        mapfunc_Jacobian_determinant=None,  # transforms noise dist.
+        seed=None):
         """Two Moons simulator
 
         Toy model that draws data from a crescent shaped mixture distribution.
@@ -79,7 +86,8 @@ class TwoMoons(BaseSimulator):
 
     def likelihood(self, param, x, log=True):
         assert x.size == 2, "not yet implemented for evaluation on multiple points at once"
-        assert np.isfinite(x).all() and (np.imag((x)) == 0).all(), "invalid input"
+        assert np.isfinite(x).all() and (np.imag(
+            (x)) == 0).all(), "invalid input"
         if self.mapfunc_inverse is None or self.mapfunc_Jacobian_determinant is None:
             return np.nan
         p = self.mapfunc_inverse(param, x)
@@ -90,11 +98,15 @@ class TwoMoons(BaseSimulator):
         if u < 0.0:  # invalid x for this theta
             return -np.inf if log else 0.0
 
-        r = np.sqrt(u ** 2 + v ** 2)  # note the angle distribution is uniform
-        L = -0.5 * ((r - self.mean_radius) / self.sd_radius) ** 2 - 0.5 * np.log(2 * np.pi * self.sd_radius ** 2)
+        r = np.sqrt(u**2 + v**2)  # note the angle distribution is uniform
+        L = -0.5 * ((r - self.mean_radius) / self.sd_radius)**2 - 0.5 * np.log(
+            2 * np.pi * self.sd_radius**2)
         return L if log else np.exp(L)
 
-    def gen_posterior_samples(self, obs=np.array([0.0, 0.0]), prior=None, n_samples=1):
+    def gen_posterior_samples(self,
+                              obs=np.array([0.0, 0.0]),
+                              prior=None,
+                              n_samples=1):
         # works only when we use the default_mapfunc above
 
         # use opposite rotation as above

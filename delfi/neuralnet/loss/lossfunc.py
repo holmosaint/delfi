@@ -42,7 +42,12 @@ def snpeb_loss(model, svi=False):
     return loss, trn_inputs
 
 
-def apt_loss_MoG_proposal(mdn, prior, n_proposal_components=None, svi=False, add_prior_precision=True, Ptol=1e-7):
+def apt_loss_MoG_proposal(mdn,
+                          prior,
+                          n_proposal_components=None,
+                          svi=False,
+                          add_prior_precision=True,
+                          Ptol=1e-7):
     """Define loss function for training with a MoG proposal, allowing
     the proposal distribution to be different for each sample. The proposal
     means, precisions and weights are passed along with the stats and params.
@@ -140,7 +145,9 @@ def apt_loss_MoG_proposal(mdn, prior, n_proposal_components=None, svi=False, add
     # lower Cholesky factors for normalized precisions of proposal posterior components
     pp_Ls_normed = cholesky_each(pp_Ps_normed)
     # log determinants of lower Cholesky factors for normalized precisions of proposal posterior components
-    pp_ldetLs_normed = tt.sum(tt.log(tt.sum(pp_Ls_normed * np.eye(mdn.n_outputs), axis=4)), axis=3)
+    pp_ldetLs_normed = tt.sum(tt.log(
+        tt.sum(pp_Ls_normed * np.eye(mdn.n_outputs), axis=4)),
+                              axis=3)
     # precisions of proposal posterior components (now well-conditioned)
     pp_Ps = pp_Ps_normed * Ds
     # log determinants of proposal posterior precisions
@@ -192,13 +199,19 @@ def apt_loss_MoG_proposal(mdn, prior, n_proposal_components=None, svi=False, add
     loss = -tt.mean(mog_LL(*mog_LL_inputs))
 
     # collect extra input variables to be provided for each training data point
-    trn_inputs = [mdn.params, mdn.stats,
-                  prop_Pms, prop_Ps, prop_ldetPs, prop_las, prop_QFs]
+    trn_inputs = [
+        mdn.params, mdn.stats, prop_Pms, prop_Ps, prop_ldetPs, prop_las,
+        prop_QFs
+    ]
 
     return loss, trn_inputs
 
 
-def apt_loss_gaussian_proposal(mdn, prior, svi=False, add_prior_precision=True, Ptol=1e-7):
+def apt_loss_gaussian_proposal(mdn,
+                               prior,
+                               svi=False,
+                               add_prior_precision=True,
+                               Ptol=1e-7):
     """Define loss function for training with a Gaussian proposal, allowing
     the proposal distribution to be different for each sample. The proposal
     mean and precision are passed along with the stats and params.
@@ -252,26 +265,39 @@ def apt_loss_gaussian_proposal(mdn, prior, svi=False, add_prior_precision=True, 
 
     # get square roots of diagonal entries of posterior proposal precision components, which are equal to the L2 norms
     # of the Cholesky factor columns for the same matrix. we'll use these to improve the numerical conditioning of pp_Ps
-    ds = [tt.sqrt(tt.sum(pp_P * np.eye(mdn.n_outputs), axis=2)) for pp_P in pp_Ps]
+    ds = [
+        tt.sqrt(tt.sum(pp_P * np.eye(mdn.n_outputs), axis=2)) for pp_P in pp_Ps
+    ]
     # normalize the estimate of each true posterior component according to the corresponding elements of d:
     # first normalize the Cholesky factor of the true posterior component estimate...
     Us_normed = [U / d.dimshuffle(0, 'x', 1) for U, d in zip(Us, ds)]
     # then normalize the propsal. the resulting list is the same proposal, differently normalized for each component of
     # the true posterior
-    P_0s_normed = [P_0 / (d.dimshuffle(0, 'x', 1) * d.dimshuffle(0, 1, 'x')) for d in ds]
-    pp_Ps_normed = [tt.batched_dot(U_normed.dimshuffle(0, 2, 1), U_normed) + P_0_normed + np.eye(mdn.n_outputs) * Ptol
-                    for U_normed, P_0_normed in zip(Us_normed, P_0s_normed)]
+    P_0s_normed = [
+        P_0 / (d.dimshuffle(0, 'x', 1) * d.dimshuffle(0, 1, 'x')) for d in ds
+    ]
+    pp_Ps_normed = [
+        tt.batched_dot(U_normed.dimshuffle(0, 2, 1), U_normed) + P_0_normed +
+        np.eye(mdn.n_outputs) * Ptol
+        for U_normed, P_0_normed in zip(Us_normed, P_0s_normed)
+    ]
     # lower Cholesky factors for normalized precisions of proposal posterior components
     pp_Ls_normed = [cholesky_each(pp_P_normed) for pp_P_normed in pp_Ps_normed]
     # log determinants of lower Cholesky factors for normalized precisions of proposal posterior components
-    pp_ldetLs_normed = [tt.sum(tt.log(tt.sum(pp_L_normed * np.eye(mdn.n_outputs), axis=2)), axis=1)
-                        for pp_L_normed in pp_Ls_normed]
+    pp_ldetLs_normed = [
+        tt.sum(tt.log(tt.sum(pp_L_normed * np.eye(mdn.n_outputs), axis=2)),
+               axis=1) for pp_L_normed in pp_Ls_normed
+    ]
     # precisions of proposal posterior components (now well-conditioned)
-    pp_Ps = [d.dimshuffle(0, 1, 'x') * pp_P_normed * d.dimshuffle(0, 'x', 1)
-             for pp_P_normed, d in zip(pp_Ps_normed, ds)]
+    pp_Ps = [
+        d.dimshuffle(0, 1, 'x') * pp_P_normed * d.dimshuffle(0, 'x', 1)
+        for pp_P_normed, d in zip(pp_Ps_normed, ds)
+    ]
     # log determinants of proposal posterior precisions
-    pp_ldetPs = [2.0 * (tt.sum(tt.log(d), axis=1) + pp_ldetL_normed)
-                 for d, pp_ldetL_normed in zip(ds, pp_ldetLs_normed)]
+    pp_ldetPs = [
+        2.0 * (tt.sum(tt.log(d), axis=1) + pp_ldetL_normed)
+        for d, pp_ldetL_normed in zip(ds, pp_ldetLs_normed)
+    ]
 
     # covariances of proposal posterior components:
     pp_Ss = [invert_each(P) for P in pp_Ps]
@@ -289,9 +315,10 @@ def apt_loss_gaussian_proposal(mdn, prior, svi=False, add_prior_precision=True, 
     # 0.5 * (prop_ldetP - prior_ldetP + tensorQF(prior.P, prior.m) - tensorQF(prop_P, prop_m))
     #
     # since we're going to normalize the pp mixture coefficients sum to 1
-    pp_lZs = [0.5 * (ldetP - pp_ldetP - QF + pp_QF)
-              for    ldetP,  pp_ldetP,  QF,  pp_QF
-              in zip(ldetPs, pp_ldetPs, QFs, pp_QFs)]
+    pp_lZs = [
+        0.5 * (ldetP - pp_ldetP - QF + pp_QF)
+        for ldetP, pp_ldetP, QF, pp_QF in zip(ldetPs, pp_ldetPs, QFs, pp_QFs)
+    ]
 
     # calculate log mixture coefficients of proposal posterior in two steps:
     # 1) add log posterior weights a to normalization coefficients Z
@@ -319,10 +346,14 @@ def apt_loss_atomic_proposal(model, svi=False, combined_loss=False):
     """
 
     if model.density == 'mog':
-        return apt_mdn_loss_atomic_proposal(model, svi=svi, combined_loss=combined_loss)
+        return apt_mdn_loss_atomic_proposal(model,
+                                            svi=svi,
+                                            combined_loss=combined_loss)
     elif model.density == 'maf':
         assert not svi, 'SVI not supported for MAFs'
-        return apt_maf_loss_atomic_proposal(model, svi=svi, combined_loss=combined_loss)
+        return apt_maf_loss_atomic_proposal(model,
+                                            svi=svi,
+                                            combined_loss=combined_loss)
 
 
 def apt_mdn_loss_atomic_proposal(mdn, svi=False, combined_loss=False):
@@ -350,17 +381,24 @@ def apt_mdn_loss_atomic_proposal(mdn, svi=False, combined_loss=False):
     # diffs : [ n_batch x (n_atoms+1) x n_outputs for each component ]
     # Ms    : [ n_batch x (n_atoms+1)             for each component ]
     # Ms[k][n,i] = (theta[i] - m[k][n])' U[k][n]' U[k][n] (theta[i] - m[k][n])
-    dthetas = [theta_all - m.dimshuffle([ 0,'x',1]) for m in ms] # theta[i] - m[k][n]
-    Ms = [tt.sum( tt.sum(dtheta.dimshuffle([0,1,'x',2])*U.dimshuffle([0,'x',1,2]),
-        axis=3)**2, axis=2 ) for dtheta,U in zip(dthetas, Us)]
+    dthetas = [theta_all - m.dimshuffle([0, 'x', 1]) for m in ms
+              ]  # theta[i] - m[k][n]
+    Ms = [
+        tt.sum(tt.sum(dtheta.dimshuffle([0, 1, 'x', 2]) *
+                      U.dimshuffle([0, 'x', 1, 2]),
+                      axis=3)**2,
+               axis=2) for dtheta, U in zip(dthetas, Us)
+    ]
 
     # compute (unnormalized) log-densities, weighted by log prior ratios
     Ms = [-0.5 * M - lprs for M in Ms]
 
     # compute per-component log-densities and log-normalizers
-    lprobs_comps = [M[:,0] + ldetU for M, ldetU in zip(Ms, ldetUs)]
-    lZ_comps = [MyLogSumExp(M,axis=1).squeeze() + ldetU
-            for M,ldetU in zip(Ms, ldetUs)]  # sum over all proposal thetas
+    lprobs_comps = [M[:, 0] + ldetU for M, ldetU in zip(Ms, ldetUs)]
+    lZ_comps = [
+        MyLogSumExp(M, axis=1).squeeze() + ldetU
+        for M, ldetU in zip(Ms, ldetUs)
+    ]  # sum over all proposal thetas
 
     # compute overall log-densities and log-normalizers across components
     lq = MyLogSumExp(tt.stack(lprobs_comps, axis=1) + tt.log(a), axis=1)
@@ -379,7 +417,7 @@ def apt_mdn_loss_atomic_proposal(mdn, svi=False, combined_loss=False):
     else:
         loss = -tt.mean(lprobs)  # average over samples
 
-    return loss, trn_inputs    
+    return loss, trn_inputs
 
 
 def apt_maf_loss_atomic_proposal(net, svi=False, combined_loss=False):
@@ -409,7 +447,10 @@ def apt_maf_loss_atomic_proposal(net, svi=False, combined_loss=False):
 
     # compute MAF log-densities for true and other atoms
     lprobs = theano.clone(output=net.lprobs,
-                          replace={net.params:theta_all, net.stats:x_nl},
+                          replace={
+                              net.params: theta_all,
+                              net.stats: x_nl
+                          },
                           share_inputs=True)
     lprobs = tt.reshape(lprobs, newshape=(n_atoms + 1, n_batch), ndim=2)
 

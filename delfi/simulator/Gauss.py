@@ -5,6 +5,7 @@ from delfi.simulator.BaseSimulator import BaseSimulator
 
 
 class Gauss(BaseSimulator):
+
     def __init__(self, dim=1, noise_cov=0.1, seed=None):
         """Gauss simulator
 
@@ -21,7 +22,7 @@ class Gauss(BaseSimulator):
             If set, randomness is seeded
         """
         super().__init__(dim_param=dim, seed=seed)
-        self.noise_cov = noise_cov*np.eye(dim)
+        self.noise_cov = noise_cov * np.eye(dim)
 
     @copy_ancestor_docstring
     def gen_single(self, param):

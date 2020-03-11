@@ -13,7 +13,7 @@ def logit_jac_logD(x):
 
 
 def normcdf_jac_logD(y):  # log of Gaussian pdf
-    return -0.5 * (y ** 2 + np.log(2.0 * np.pi)).sum(axis=-1)
+    return -0.5 * (y**2 + np.log(2.0 * np.pi)).sum(axis=-1)
 
 
 def norminvcdf_jac_logD(x):

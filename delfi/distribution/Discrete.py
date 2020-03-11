@@ -4,6 +4,7 @@ from delfi.distribution.BaseDistribution import BaseDistribution
 
 
 class Discrete(BaseDistribution):
+
     def __init__(self, p, seed=None):
         """Discrete distribution
 

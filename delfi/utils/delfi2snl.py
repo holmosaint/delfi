@@ -18,6 +18,7 @@ class SNLprior(object):
     delfi_prior : delfi.distributions object
         Prior as would be used for delfi.generator.
     """
+
     def __init__(self, delfi_prior):
         self.delfi_prior = delfi_prior
 
@@ -34,18 +35,18 @@ class SNLprior(object):
         Returns
         -------
         n_samples x self.ndim if n_samples>1, else (self.ndim,)
-        """        
+        """
         if not rng is None:
             self.delfi_prior.rng = rng
-        
-        if n_samples is None: 
+
+        if n_samples is None:
             one_sample = True
             n_samples = 1
-        else: 
+        else:
             one_sample = False
-            
+
         samples = self.delfi_prior.gen(n_samples)
-        
+
         return samples[0] if one_sample else samples
 
     def eval(self, x, ii=None, log=True):
@@ -64,7 +65,7 @@ class SNLprior(object):
         Returns
         -------
         array (if more than one datapoint x), else scalar
-        """        
+        """
         x = np.asarray(x)
         if x.ndim == 1:
             return self.eval(x[np.newaxis, :], ii, log)[0]
@@ -90,6 +91,7 @@ class SNLmodel(BaseGenerator):
     summary: summary statistics object
         Summary stats object with .calc([x]) method
     """
+
     def __init__(self, delfi_model, summary):
         self.delfi_model = delfi_model
         self.summary = summary
@@ -118,7 +120,7 @@ class SNLmodel(BaseGenerator):
             params = [ps[i] for i in range(ps.shape[0])]
         else:
             params = [ps]
-                        
+
         # Run forward model for params (in batches)
         final_params = []
         final_stats = []  # list of summary stats
@@ -127,8 +129,9 @@ class SNLmodel(BaseGenerator):
             # run forward model for all params, each n_reps times
             result = self.delfi_model.gen(params_batch, n_reps=1, pbar=None)
 
-            stats, params = self.process_batch(params_batch, 
-                                            result,skip_feedback=skip_feedback)
+            stats, params = self.process_batch(params_batch,
+                                               result,
+                                               skip_feedback=skip_feedback)
             final_params += params
             final_stats += stats
 
@@ -137,6 +140,6 @@ class SNLmodel(BaseGenerator):
 
         # n_samples x n_reps x dim summary stats
         stats = np.array(final_stats)
-        stats = stats.squeeze() # already supports 'one_sample' !
+        stats = stats.squeeze()  # already supports 'one_sample' !
 
         return stats

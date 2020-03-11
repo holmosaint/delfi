@@ -1,9 +1,10 @@
-import numpy as np 
+import numpy as np
 from scipy.stats import poisson
 from delfi.distribution.BaseDistribution import BaseDistribution
 
 
 class Poisson(BaseDistribution):
+
     def __init__(self, mu=0., offset=0., seed=None):
         """Univariate (!) Poisson distribution
         Parameters
@@ -14,11 +15,11 @@ class Poisson(BaseDistribution):
             If provided, random number generator will be seeded
         """
         super().__init__(ndim=1, seed=seed)
-        
+
         mu = np.atleast_1d(mu)
         assert mu.ndim == 1, 'mu must be a 1-d array'
         assert offset >= 0, 'offset must not be negative'
-        
+
         self.mu = mu
         self.offset = offset
         self._poisson = poisson(mu=mu, loc=offset)
@@ -51,5 +52,6 @@ class Poisson(BaseDistribution):
     def gen(self, n_samples=1, seed=None):
         # See BaseDistribution.py for docstring
 
-        x = self._poisson.rvs(random_state=self.rng, size=(n_samples, self.ndim))
+        x = self._poisson.rvs(random_state=self.rng,
+                              size=(n_samples, self.ndim))
         return x

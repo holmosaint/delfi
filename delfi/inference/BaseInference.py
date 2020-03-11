@@ -10,10 +10,15 @@ dtype = theano.config.floatX
 
 
 class BaseInference(metaclass=ABCMetaDoc):
-    def __init__(self, generator,
-                 prior_norm=True, init_norm=False,
+
+    def __init__(self,
+                 generator,
+                 prior_norm=True,
+                 init_norm=False,
                  pilot_samples=100,
-                 seed=None, verbose=True, **kwargs):
+                 seed=None,
+                 verbose=True,
+                 **kwargs):
         """Abstract base class for inference algorithms
 
         Inference algorithms must at least implement abstract methods of this
@@ -60,9 +65,11 @@ class BaseInference(metaclass=ABCMetaDoc):
         else:
             params, stats = generator.gen(1, skip_feedback=True, verbose=False)
         assert stats.ndim == 2, "invalid summary stats"
-        kwargs.update({'n_inputs': stats.shape[1],
-                       'n_outputs': params.shape[1],
-                       'seed': self.gen_newseed()})
+        kwargs.update({
+            'n_inputs': stats.shape[1],
+            'n_outputs': params.shape[1],
+            'seed': self.gen_newseed()
+        })
 
         self.kwargs = kwargs
 
@@ -103,8 +110,11 @@ class BaseInference(metaclass=ABCMetaDoc):
     def run(self):
         pass
 
-    def run_repeated(self, n_repeats=10, n_NN_inits_per_repeat=1,
-                     callback=None, **kwargs):
+    def run_repeated(self,
+                     n_repeats=10,
+                     n_NN_inits_per_repeat=1,
+                     callback=None,
+                     **kwargs):
         """Repeatedly run the method and collect results. Optionally, carry out
         several runs with the same initial generator RNG state but different
         neural network initializations.
@@ -166,6 +176,7 @@ class BaseInference(metaclass=ABCMetaDoc):
         """ Resets all bias weights in hidden layers to zero.
 
         """
+
         def idx_hiddens(x):
             return x.name[0] == 'h'
 
@@ -196,7 +207,7 @@ class BaseInference(metaclass=ABCMetaDoc):
                                          deterministic=True)
         mog = posterior.ztrans_inv(self.params_mean, self.params_std)
 
-        assert np.all(np.diff(mog.a)==0.) # assumes uniform alpha
+        assert np.all(np.diff(mog.a) == 0.)  # assumes uniform alpha
 
         n_dim = self.kwargs['n_outputs']
         triu_mask = np.triu(np.ones([n_dim, n_dim], dtype=dtype), 1)
@@ -206,7 +217,7 @@ class BaseInference(metaclass=ABCMetaDoc):
         mu, Sig = np.zeros_like(mog.xs[0].m), np.zeros_like(mog.xs[0].S)
         for i in range(self.network.n_components):
             Sig += mog.a[i] * mog.xs[i].S
-            mu  += mog.a[i] * mog.xs[i].m
+            mu += mog.a[i] * mog.xs[i].m
         C = np.zeros_like(Sig)
         for i in range(self.network.n_components):
             dmu = mog.xs[i].m - mu if self.network.n_components > 1 \
@@ -218,12 +229,13 @@ class BaseInference(metaclass=ABCMetaDoc):
         tSig = np.eye(mog.xs[0].m.size) if tSig is None else tSig
 
         # compute normalizers (we only z-score, don't whiten!)
-        Z1inv = np.sqrt((1.-fcv) / np.diag(Sig) * np.diag(tSig)).reshape(-1)
-        Z2inv = np.sqrt(  fcv    / np.diag( C ) * np.diag(tSig)).reshape(-1)
+        Z1inv = np.sqrt((1. - fcv) / np.diag(Sig) * np.diag(tSig)).reshape(-1)
+        Z2inv = np.sqrt(fcv / np.diag(C) * np.diag(tSig)).reshape(-1)
 
         # first we need the center of means
         def idx_MoG(x):
             return x.name[:5] == 'means'
+
         mu_ = np.zeros_like(mog.xs[0].m)
         for w, b in zip(filter(idx_MoG, self.network.mps_wp),
                         filter(idx_MoG, self.network.mps_bp)):
@@ -241,28 +253,29 @@ class BaseInference(metaclass=ABCMetaDoc):
 
         # normalize covariances
         def idx_MoG(x):
-            return x.name[:10]=='precisions'
+            return x.name[:10] == 'precisions'
+
         # Sig^-0.5 = diag_mask * (exp(Wh+b)/exp(log(Z1)) + triu_mask * (Wh+b)*Z1
         #          = diag_mask *  exp(Wh+ (b-log(Z1))    + triu_mask * (Wh+((b+Wh)*Z1-Wh))
         for w, b in zip(filter(idx_MoG, self.network.mps_wp),
                         filter(idx_MoG, self.network.mps_bp)):
-            Wh = h.dot(w.get_value()).reshape(n_dim,n_dim)
-            b_ = b.get_value().copy().reshape(n_dim,n_dim)
+            Wh = h.dot(w.get_value()).reshape(n_dim, n_dim)
+            b_ = b.get_value().copy().reshape(n_dim, n_dim)
 
-            val = diag_mask * (b_ - np.diag(np.log(Z1inv))) + triu_mask * ((b_+Wh).dot(np.diag(1./Z1inv))- Wh )
+            val = diag_mask * (b_ - np.diag(np.log(Z1inv))) + triu_mask * (
+                (b_ + Wh).dot(np.diag(1. / Z1inv)) - Wh)
 
             b.set_value(val.flatten())
-
 
     def norm_init(self):
         if self.init_norm and self.network.density == 'mog':
             print('standardizing network initialization')
             if self.network.n_components > 1:
-                self.standardize_init(fcv = self.init_fcv)
+                self.standardize_init(fcv=self.init_fcv)
             else:
-                self.standardize_init(fcv = 0.)
+                self.standardize_init(fcv=0.)
 
-    def standardize_init(self, fcv = 0.8):
+    def standardize_init(self, fcv=0.8):
         """ Standardizes the network initialization on obs
 
         Ensures output distributions for xo have mean zero and unit variance.
@@ -305,9 +318,8 @@ class BaseInference(metaclass=ABCMetaDoc):
             n_samples -= n_pilot
 
             if n_samples > 0:
-                params_rem, stats_rem = self.generator.gen(n_samples,
-                                                           prior_mixin=prior_mixin,
-                                                           verbose=verbose)
+                params_rem, stats_rem = self.generator.gen(
+                    n_samples, prior_mixin=prior_mixin, verbose=verbose)
                 params = np.concatenate((params, params_rem), axis=0)
                 stats = np.concatenate((stats, stats_rem), axis=0)
         else:
@@ -339,7 +351,7 @@ class BaseInference(metaclass=ABCMetaDoc):
         """reseed inference method's RNG, then generator, then network"""
         self.rng.seed(seed=seed)
         self.seed = seed
-        self.kwargs['seed'] = self.gen_newseed()   # for consistent NN init
+        self.kwargs['seed'] = self.gen_newseed()  # for consistent NN init
         self.generator.reseed(self.gen_newseed())  # also reseeds prior + model
         if isinstance(self.network, NeuralNet):
             self.network.reseed(self.gen_newseed())  # for reproducible samples
@@ -377,8 +389,10 @@ class BaseInference(metaclass=ABCMetaDoc):
         self.stats_std[self.stats_std == 0.0] = 1.0
         self.stats_std = np.maximum(self.stats_std, min_std)
         assert (self.stats_std > 0).all(), "pilot run failed"
-        ok_sims = np.logical_not(np.logical_or(np.isnan(stats).any(axis=1),
-                                               np.isnan(params).any(axis=1)))
+        ok_sims = np.logical_not(
+            np.logical_or(
+                np.isnan(stats).any(axis=1),
+                np.isnan(params).any(axis=1)))
         self.unused_pilot_samples = (params[ok_sims, :], stats[ok_sims, :])
 
     def predict(self, x, deterministic=True):

@@ -14,19 +14,25 @@ from delfi.utils.data import isint
 from delfi.utils.odict import first, last, nth
 from delfi.utils.symbolic import MyLogSumExp, tensorN
 
-
 dtype = theano.config.floatX
 
 
 class NeuralNet(object):
-    def __init__(self, n_inputs=None, n_outputs=None, input_shape=None,
+
+    def __init__(self,
+                 n_inputs=None,
+                 n_outputs=None,
+                 input_shape=None,
                  n_bypass=0,
                  density='mog',
-                 n_hiddens=(10, 10), impute_missing=True, seed=None,
-                 n_filters=(), filter_sizes=3, pool_sizes=2,
+                 n_hiddens=(10, 10),
+                 impute_missing=True,
+                 seed=None,
+                 n_filters=(),
+                 filter_sizes=3,
+                 pool_sizes=2,
                  n_rnn=0,
                  **density_opts):
-
         """Initialize a mixture density network with custom layers
 
         Parameters
@@ -104,8 +110,8 @@ class NeuralNet(object):
         self.layer = collections.OrderedDict()
 
         # input layer, None indicates batch size not fixed at compile time
-        self.layer['input'] = ll.InputLayer(
-            (None, self.n_inputs), input_var=self.stats)
+        self.layer['input'] = ll.InputLayer((None, self.n_inputs),
+                                            input_var=self.stats)
 
         # learn replacement values
         if self.impute_missing:
@@ -141,7 +147,8 @@ class NeuralNet(object):
 
         # recurrent neural net, input: (batch, sequence_length, num_inputs)
         if self.n_rnn > 0:
-            self.layer['rnn'] = ll.GRULayer(last(self.layer), n_rnn,
+            self.layer['rnn'] = ll.GRULayer(last(self.layer),
+                                            n_rnn,
                                             only_return_final=True)
 
         # convolutional net, input: (batch, channels, rows, columns)
@@ -174,9 +181,8 @@ class NeuralNet(object):
                         ignore_border=True)
 
         # flatten
-        self.layer['flatten'] = ll.FlattenLayer(
-            incoming=last(self.layer),
-            outdim=2)
+        self.layer['flatten'] = ll.FlattenLayer(incoming=last(self.layer),
+                                                outdim=2)
 
         # incorporate bypass inputs
         if self.n_bypass > 0 and (self.n_rnn > 0 or n_cnn > 0):
@@ -192,8 +198,12 @@ class NeuralNet(object):
 
         self.compile_funs()  # theano functions
 
-    def init_maf(self, n_mades=5, batch_norm=False, maf_actfun='tanh',
-                 output_order='random', maf_mode='random',
+    def init_maf(self,
+                 n_mades=5,
+                 batch_norm=False,
+                 maf_actfun='tanh',
+                 output_order='random',
+                 maf_mode='random',
                  **unused_kwargs):
         """
         :param n_mades:
@@ -221,18 +231,29 @@ class NeuralNet(object):
         rng_maf = np.random.RandomState(seed=self.gen_newseed())
 
         self.cmaf = ConditionalMaskedAutoregressiveFlow(
-            n_inputs=n_inputs_cmaf,  n_outputs=self.n_outputs,
-            n_hiddens=self.n_hiddens, act_fun=self.maf_actfun,
-            n_mades=self.n_mades, batch_norm=self.batch_norm,
-            output_order=self.output_order, mode=self.maf_mode,
-            input=self.maf_input, output=self.params, rng=rng_maf)
+            n_inputs=n_inputs_cmaf,
+            n_outputs=self.n_outputs,
+            n_hiddens=self.n_hiddens,
+            act_fun=self.maf_actfun,
+            n_mades=self.n_mades,
+            batch_norm=self.batch_norm,
+            output_order=self.output_order,
+            mode=self.maf_mode,
+            input=self.maf_input,
+            output=self.params,
+            rng=rng_maf)
 
         self.aps = prev_params + self.cmaf.parms
         self.lprobs = self.cmaf.L  # model log-likelihood
         self.dlprobs = self.lprobs  # svi not possible
 
-    def init_mdn(self, svi=False, n_components=1, rank=None,
-                 mdn_actfun=lnl.tanh, homoscedastic=False, min_precisions=None,
+    def init_mdn(self,
+                 svi=False,
+                 n_components=1,
+                 rank=None,
+                 mdn_actfun=lnl.tanh,
+                 homoscedastic=False,
+                 min_precisions=None,
                  **unused_kwargs):
         """
         :param svi: bool
@@ -256,31 +277,45 @@ class NeuralNet(object):
         # hidden layers
         for l in range(len(self.n_hiddens)):
             self.layer['hidden_' + str(l + 1)] = dl.FullyConnectedLayer(
-                last(self.layer), n_units=self.n_hiddens[l],
+                last(self.layer),
+                n_units=self.n_hiddens[l],
                 actfun=self.mdn_actfun,
-                svi=self.svi, name='h' + str(l + 1))
+                svi=self.svi,
+                name='h' + str(l + 1))
 
         last_hidden = last(self.layer)
         # mixture layers
-        self.layer['mixture_weights'] = dl.MixtureWeightsLayer(last_hidden,
-            n_units=self.n_components, actfun=lnl.softmax, svi=self.svi,
+        self.layer['mixture_weights'] = dl.MixtureWeightsLayer(
+            last_hidden,
+            n_units=self.n_components,
+            actfun=lnl.softmax,
+            svi=self.svi,
             name='weights')
-        self.layer['mixture_means'] = dl.MixtureMeansLayer(last_hidden,
-            n_components=self.n_components, n_dim=self.n_outputs, svi=self.svi,
+        self.layer['mixture_means'] = dl.MixtureMeansLayer(
+            last_hidden,
+            n_components=self.n_components,
+            n_dim=self.n_outputs,
+            svi=self.svi,
             name='means')
         if self.homoscedastic:
             PrecisionsLayer = dl.MixtureHomoscedasticPrecisionsLayer
         else:
             PrecisionsLayer = dl.MixturePrecisionsLayer
         # why is homoscedastic an input to the layer init?
-        self.layer['mixture_precisions'] = PrecisionsLayer(last_hidden,
-            n_components=self.n_components, n_dim=self.n_outputs, svi=self.svi,
-            name='precisions', rank=self.rank, homoscedastic=self.homoscedastic,
+        self.layer['mixture_precisions'] = PrecisionsLayer(
+            last_hidden,
+            n_components=self.n_components,
+            n_dim=self.n_outputs,
+            svi=self.svi,
+            name='precisions',
+            rank=self.rank,
+            homoscedastic=self.homoscedastic,
             min_precisions=min_precisions)
 
-        last_mog = [self.layer['mixture_weights'],
-                    self.layer['mixture_means'],
-                    self.layer['mixture_precisions']]
+        last_mog = [
+            self.layer['mixture_weights'], self.layer['mixture_means'],
+            self.layer['mixture_precisions']
+        ]
 
         # mixture parameters
         # a : weights, matrix with shape (batch, n_components)
@@ -292,19 +327,26 @@ class NeuralNet(object):
         self.Us = precision_out['Us']
         self.ldetUs = precision_out['ldetUs']
         self.comps = {
-            **{'a': self.a},
+            **{
+                'a': self.a
+            },
             **{'m' + str(i): self.ms[i] for i in range(self.n_components)},
-            **{'U' + str(i): self.Us[i] for i in range(self.n_components)}}
+            **{'U' + str(i): self.Us[i] for i in range(self.n_components)}
+        }
 
         # log probability of y given the mixture distribution
         # lprobs_comps : log probs per component, list of len n_components with (batch, )
         # probs : log probs of mixture, (batch, )
 
-        self.lprobs_comps = [-0.5 * tt.sum(tt.sum((self.params - m).dimshuffle(
-            [0, 'x', 1]) * U, axis=2)**2, axis=1) + ldetU
-            for m, U, ldetU in zip(self.ms, self.Us, self.ldetUs)]
-        self.lprobs = (MyLogSumExp(tt.stack(self.lprobs_comps, axis=1) + tt.log(self.a), axis=1)
-                       - (0.5 * self.n_outputs * np.log(2 * np.pi))).squeeze()
+        self.lprobs_comps = [
+            -0.5 * tt.sum(tt.sum(
+                (self.params - m).dimshuffle([0, 'x', 1]) * U, axis=2)**2,
+                          axis=1) + ldetU
+            for m, U, ldetU in zip(self.ms, self.Us, self.ldetUs)
+        ]
+        self.lprobs = (MyLogSumExp(
+            tt.stack(self.lprobs_comps, axis=1) + tt.log(self.a), axis=1) -
+                       (0.5 * self.n_outputs * np.log(2 * np.pi))).squeeze()
 
         # the quantities from above again, but with deterministic=True
         # --- in the svi case, this will disable injection of randomness;
@@ -314,13 +356,19 @@ class NeuralNet(object):
         self.dUs = dprecision_out['Us']
         self.dldetUs = dprecision_out['ldetUs']
         self.dcomps = {
-            **{'a': self.da},
+            **{
+                'a': self.da
+            },
             **{'m' + str(i): self.dms[i] for i in range(self.n_components)},
-            **{'U' + str(i): self.dUs[i] for i in range(self.n_components)}}
+            **{'U' + str(i): self.dUs[i] for i in range(self.n_components)}
+        }
 
-        self.dlprobs_comps = [-0.5 * tt.sum(tt.sum((self.params - m).dimshuffle(
-            [0, 'x', 1]) * U, axis=2)**2, axis=1) + ldetU
-            for m, U, ldetU in zip(self.dms, self.dUs, self.dldetUs)]
+        self.dlprobs_comps = [
+            -0.5 * tt.sum(tt.sum(
+                (self.params - m).dimshuffle([0, 'x', 1]) * U, axis=2)**2,
+                          axis=1) + ldetU
+            for m, U, ldetU in zip(self.dms, self.dUs, self.dldetUs)
+        ]
         self.dlprobs = (MyLogSumExp(tt.stack(self.dlprobs_comps, axis=1) + tt.log(self.da), axis=1) \
                         - (0.5 * self.n_outputs * np.log(2 * np.pi))).squeeze()
 
@@ -337,23 +385,18 @@ class NeuralNet(object):
 
     def compile_funs(self):
         """Compiles theano functions"""
-        self._f_eval_lprobs = theano.function(
-            inputs=[self.params, self.stats],
-            outputs=self.lprobs)
-        self._f_eval_dlprobs = theano.function(
-            inputs=[self.params, self.stats],
-            outputs=self.dlprobs)
+        self._f_eval_lprobs = theano.function(inputs=[self.params, self.stats],
+                                              outputs=self.lprobs)
+        self._f_eval_dlprobs = theano.function(inputs=[self.params, self.stats],
+                                               outputs=self.dlprobs)
         if self.density == 'mog':
-            self._f_eval_comps = theano.function(
-                inputs=[self.stats],
-                outputs=self.comps)
-            self._f_eval_dcomps = theano.function(
-                inputs=[self.stats],
-                outputs=self.dcomps)
+            self._f_eval_comps = theano.function(inputs=[self.stats],
+                                                 outputs=self.comps)
+            self._f_eval_dcomps = theano.function(inputs=[self.stats],
+                                                  outputs=self.dcomps)
         elif self.density == 'maf':
-            self._f_eval_maf_input = theano.function(
-                inputs=[self.stats],
-                outputs=self.maf_input)
+            self._f_eval_maf_input = theano.function(inputs=[self.stats],
+                                                     outputs=self.maf_input)
 
     def eval_comps(self, stats, deterministic=True):
         """Evaluate the parameters of all mixture components at given inputs
@@ -390,9 +433,11 @@ class NeuralNet(object):
         log probabilities : log p(params|stats)
         """
         if deterministic:
-            return self._f_eval_dlprobs(params.astype(dtype), stats.astype(dtype))
+            return self._f_eval_dlprobs(params.astype(dtype),
+                                        stats.astype(dtype))
         else:
-            return self._f_eval_lprobs(params.astype(dtype), stats.astype(dtype))
+            return self._f_eval_lprobs(params.astype(dtype),
+                                       stats.astype(dtype))
 
     def get_density(self, stats, deterministic=True):
         assert stats.size == self.n_inputs
@@ -404,7 +449,8 @@ class NeuralNet(object):
             assert deterministic
             cmaf_input = self._f_eval_maf_input(stats)
             return MAFconditional(
-                model=self.cmaf, cmaf_inputs=cmaf_input.reshape(-1),
+                model=self.cmaf,
+                cmaf_inputs=cmaf_input.reshape(-1),
                 makecopy=True,
                 rng=np.random.RandomState(seed=self.gen_newseed()))
 
@@ -445,8 +491,9 @@ class NeuralNet(object):
         # log determinants of posterior component precisions
         ldetPs = [2 * ldetU for ldetU in ldetUs]
         # precision times mean for each posterior component:
-        Pms = [tt.sum(P * m.dimshuffle(0, 'x', 1), axis=2)
-               for m, P in zip(ms, Ps)]
+        Pms = [
+            tt.sum(P * m.dimshuffle(0, 'x', 1), axis=2) for m, P in zip(ms, Ps)
+        ]
         # calculate tensorQF(P, m):
         QFs = [tt.sum(m * Pm, axis=1) for m, Pm in zip(ms, Pms)]
         return a, ms, Us, ldetUs, Ps, ldetPs, Pms, QFs
@@ -481,18 +528,29 @@ class NeuralNet(object):
     @property
     def spec_dict(self):
         """Specs as dict"""
-        spec = dict(n_inputs=self.n_inputs, n_outputs=self.n_outputs,
-                    n_filters=self.n_filters, n_hiddens=self.n_hiddens,
-                    n_rnn=self.n_rnn, n_bypass=self.n_bypass,
-                    input_shape=self.input_shape, filter_sizes=self.filter_sizes,
-                    pool_sizes=self.pool_sizes, seed=self.seed)
+        spec = dict(n_inputs=self.n_inputs,
+                    n_outputs=self.n_outputs,
+                    n_filters=self.n_filters,
+                    n_hiddens=self.n_hiddens,
+                    n_rnn=self.n_rnn,
+                    n_bypass=self.n_bypass,
+                    input_shape=self.input_shape,
+                    filter_sizes=self.filter_sizes,
+                    pool_sizes=self.pool_sizes,
+                    seed=self.seed)
 
         if self.density == 'mog':
-            spec.update(dict(svi=self.svi, n_components=self.n_components,
-                             rank=self.rank, homoscedastic=self.homoscedastic))
+            spec.update(
+                dict(svi=self.svi,
+                     n_components=self.n_components,
+                     rank=self.rank,
+                     homoscedastic=self.homoscedastic))
         elif self.density == 'maf':
-            spec.update(dict(n_mades=5, batch_norm=False,
-                             output_order='sequential', maf_mode='random'))
+            spec.update(
+                dict(n_mades=5,
+                     batch_norm=False,
+                     output_order='sequential',
+                     maf_mode='random'))
         else:
             raise NotImplementedError
 
@@ -508,6 +566,7 @@ class MAFconditional(object):
     Allows to sample and evaluate densities for parameters from the posterior
     estimate as required for SNPE(-C).
     """
+
     def __init__(self, model, cmaf_inputs, makecopy=False, rng=np.random):
         assert isinstance(model, ConditionalMaskedAutoregressiveFlow)
         self.model = deepcopy(model) if makecopy else model

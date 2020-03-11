@@ -4,6 +4,7 @@ from delfi.simulator.BaseSimulator import BaseSimulator
 
 
 class TransformedSimulator(BaseSimulator):
+
     def __init__(self, simulator, inverse_bijection, makecopy=False):
         '''
         Simulator with parameters in a transformed space. An inverse bijection

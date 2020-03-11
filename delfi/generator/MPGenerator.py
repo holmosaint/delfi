@@ -9,8 +9,17 @@ from delfi.utils.progress import no_tqdm, progressbar
 import time
 import h5py
 
+
 class Worker(mp.Process):
-    def __init__(self, n, queue, conn, model, summary, seed=None, verbose=False):
+
+    def __init__(self,
+                 n,
+                 queue,
+                 conn,
+                 model,
+                 summary,
+                 seed=None,
+                 verbose=False):
         super().__init__()
         self.n = n
         self.queue = queue
@@ -79,7 +88,15 @@ def default_MPGenerator_rej(x):
 
 
 class MPGenerator(Default):
-    def __init__(self, models, prior, summary, data_file_name=None, rej=None, seed=None, verbose=False):
+
+    def __init__(self,
+                 models,
+                 prior,
+                 summary,
+                 data_file_name=None,
+                 rej=None,
+                 seed=None,
+                 verbose=False):
         """Generator supporting multiprocessing
 
         Parameters
@@ -106,6 +123,7 @@ class MPGenerator(Default):
         self.verbose = verbose
         self.models = models
         self.data_file_name = data_file_name
+        self.workers = None
 
     def reseed(self, seed):
         """Carries out the following operations, in order:
@@ -125,10 +143,18 @@ class MPGenerator(Default):
             self.proposal.reseed(self.gen_newseed())
 
     def start_workers(self):
-        pipes = [ mp.Pipe(duplex=True) for m in self.models ]
+        pipes = [mp.Pipe(duplex=True) for m in self.models]
         self.queue = mp.Queue()
-        self.workers = [ Worker(i, self.queue, pipes[i][1], self.models[i], self.summary, seed=self.rng.randint(low=0,high=2**31), verbose=self.verbose) for i in range(len(self.models)) ]
-        self.pipes = [ p[0] for p in pipes ]
+        self.workers = [
+            Worker(i,
+                   self.queue,
+                   pipes[i][1],
+                   self.models[i],
+                   self.summary,
+                   seed=self.rng.randint(low=0, high=2**31),
+                   verbose=self.verbose) for i in range(len(self.models))
+        ]
+        self.pipes = [p[0] for p in pipes]
 
         self.log("Starting workers")
         for w in self.workers:
@@ -166,7 +192,13 @@ class MPGenerator(Default):
         if rem_i != n_samples:
             yield params[rem_i:]
 
-    def gen(self, n_samples, n_reps=1, skip_feedback=False, prior_mixin=0, verbose=True, **kwargs):
+    def gen(self,
+            n_samples,
+            n_reps=1,
+            skip_feedback=False,
+            prior_mixin=0,
+            verbose=True,
+            **kwargs):
         """Draw parameters and run forward model
 
         Parameters
@@ -195,9 +227,17 @@ class MPGenerator(Default):
                                   prior_mixin=prior_mixin,
                                   verbose=verbose)
 
-        return self.run_model(params, skip_feedback=skip_feedback, verbose=verbose, **kwargs)
+        return self.run_model(params,
+                              skip_feedback=skip_feedback,
+                              verbose=verbose,
+                              **kwargs)
 
-    def run_model(self, params, minibatch=50, skip_feedback=False, keep_data=True, verbose=False):
+    def run_model(self,
+                  params,
+                  minibatch=50,
+                  skip_feedback=False,
+                  keep_data=True,
+                  verbose=False):
         # Run forward model for params (in batches)
         if not verbose:
             pbar = no_tqdm()
@@ -224,7 +264,8 @@ class MPGenerator(Default):
                         break
 
                     active_list.append((w, p))
-                    self.log("Dispatching to worker (len = {})".format(len(params_batch)))
+                    self.log("Dispatching to worker (len = {})".format(
+                        len(params_batch)))
                     p.send(params_batch)
                     self.log("Done")
 
@@ -237,12 +278,14 @@ class MPGenerator(Default):
                         pbar.update(msg)
                     elif type(msg) == tuple:
                         self.log("Received results")
-                        stats, params = self.filter_data(*msg, skip_feedback=skip_feedback)
+                        stats, params = self.filter_data(
+                            *msg, skip_feedback=skip_feedback)
                         final_stats += stats
                         final_params += params
                         n_remaining -= 1
                     else:
-                        self.log("Warning: Received unknown message of type {}".format(type(msg)))
+                        self.log("Warning: Received unknown message of type {}".
+                                 format(type(msg)))
 
         self.stop_workers()
 
@@ -254,7 +297,7 @@ class MPGenerator(Default):
         # n_samples x n_reps x dim summary stats
         stats = np.array(final_stats)
         stats = stats.squeeze(axis=1)
-        
+
         if self.data_file_name is not None:
             with h5py.File(self.data_file_name, 'w') as file:
                 file.create_dataset('param_data', data=params)
@@ -306,13 +349,14 @@ class MPGenerator(Default):
 
 
 def default_slurm_options():  # pragma: no cover
-    opts = {'clusters': None,
-            'time': '1:00:00',
-            'D': os.path.expanduser('~'),
-            'ntasks-per-node': 1,
-            'nodes': 1,
-            'output': os.path.join(os.path.expanduser('~'), '%j.out')
-            }
+    opts = {
+        'clusters': None,
+        'time': '1:00:00',
+        'D': os.path.expanduser('~'),
+        'ntasks-per-node': 1,
+        'nodes': 1,
+        'output': os.path.join(os.path.expanduser('~'), '%j.out')
+    }
     return opts
 
 
@@ -330,7 +374,8 @@ def generate_slurm_script(filename):  # pragma: no cover
     if data['slurm_options'] is not None:
         slurm_options.update(data['slurm_options'])
     assert slurm_options['clusters'] is not None, "cluster(s) must be specified"
-    assert 'wait' not in slurm_options.keys() and 'W' not in slurm_options.keys(), "--wait/W always on, not options"
+    assert 'wait' not in slurm_options.keys() and 'W' not in slurm_options.keys(
+    ), "--wait/W always on, not options"
 
     slurm_script_file = os.path.splitext(filename)[0] + '_slurm.sh'
     with open(slurm_script_file, 'w') as f:
@@ -343,7 +388,7 @@ def generate_slurm_script(filename):  # pragma: no cover
                 postfix = ' '
             else:
                 prefix = '--'
-                postfix= '='
+                postfix = '='
             s = '#SBATCH {0}{1}'.format(prefix, key)
             if val is not None:
                 s += '{0}{1}'.format(postfix, val)
@@ -354,7 +399,8 @@ def generate_slurm_script(filename):  # pragma: no cover
 
         python_commands = 'from delfi.generator.MPGenerator import mpgen_from_file;'\
             'mpgen_from_file(\'{0}\', from_slurm=True)'.format(filename)
-        f.write('srun {0} -c "{1}"\n'.format(data['python_executable'], python_commands))
+        f.write('srun {0} -c "{1}"\n'.format(data['python_executable'],
+                                             python_commands))
 
     return slurm_options, slurm_script_file
 
@@ -364,7 +410,10 @@ def get_slurm_task_index():  # pragma: no cover
     return int(os.getenv('SLURM_GTIDS').split(',')[localid])
 
 
-def mpgen_from_file(filename, n_workers=None, from_slurm=False, cleanup=True):  # pragma: no cover
+def mpgen_from_file(filename,
+                    n_workers=None,
+                    from_slurm=False,
+                    cleanup=True):  # pragma: no cover
     """
     Run simulations from a file using a multi-process generator, and save them in a file.
 
@@ -393,21 +442,30 @@ def mpgen_from_file(filename, n_workers=None, from_slurm=False, cleanup=True):  
         samplefile = sf + '_{0}'.format(tid) + se
 
         samples_per_task = int(np.ceil(data['n_samples'] / ntasks))
-        n_samples = np.minimum((tid + 1) * samples_per_task, data['n_samples']) - tid * samples_per_task
+        n_samples = np.minimum((tid + 1) * samples_per_task,
+                               data['n_samples']) - tid * samples_per_task
 
-    elif data['use_slurm']:  # start a slurm job that will call this function once per task
+    elif data[
+            'use_slurm']:  # start a slurm job that will call this function once per task
 
         slurm_options, slurm_script_file = generate_slurm_script(filename)
-        ntasks = int(slurm_options['ntasks-per-node']) * int(slurm_options['nodes'])
+        ntasks = int(slurm_options['ntasks-per-node']) * int(
+            slurm_options['nodes'])
 
-        result = subprocess.run(['sbatch', slurm_script_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(['sbatch', slurm_script_file],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
         # sbatch will now block until job is completed due to --wait flag
         prefix = 'Submitted batch job '
-        L = [s for s in result.stdout.decode().split('\n') if s.startswith(prefix)]
+        L = [
+            s for s in result.stdout.decode().split('\n')
+            if s.startswith(prefix)
+        ]
         assert len(L) == 1, "job was not submitted correctly"
         jobid = int(L[0][len(prefix):].split(' ')[0])
         if result.returncode != 0:  # e.g. job timed out
-            sys.stderr.write('SLURM job {0} terminated abnormally: {1}'.format(jobid, result.stderr.decode()))
+            sys.stderr.write('SLURM job {0} terminated abnormally: {1}'.format(
+                jobid, result.stderr.decode()))
 
         # collect results from each task's file
         params, stats, task_time = None, None, np.full(ntasks, np.nan)
@@ -422,7 +480,9 @@ def mpgen_from_file(filename, n_workers=None, from_slurm=False, cleanup=True):  
                 if params is None:
                     params, stats = samples['params'], samples['stats']
                 else:
-                    params, stats = np.vstack((params, samples['params'])), np.vstack((stats, samples['stats']))
+                    params, stats = np.vstack(
+                        (params, samples['params'])), np.vstack(
+                            (stats, samples['stats']))
                 task_time[tid] = samples['time']
         assert params is not None, "failed to generate any samples"
 
@@ -430,7 +490,11 @@ def mpgen_from_file(filename, n_workers=None, from_slurm=False, cleanup=True):  
 
         # save all samples in one file
         with open(data['samplefile'], 'wb') as f:
-            pickle.dump(dict(params=params, stats=stats, time=elapsed_time, task_time=task_time), f,
+            pickle.dump(dict(params=params,
+                             stats=stats,
+                             time=elapsed_time,
+                             task_time=task_time),
+                        f,
                         protocol=pickle.HIGHEST_PROTOCOL)
 
         if not cleanup:
@@ -446,7 +510,8 @@ def mpgen_from_file(filename, n_workers=None, from_slurm=False, cleanup=True):  
 
         outputfile = slurm_options['output'].replace('%j', str(jobid))
         if '%' in outputfile:
-            sys.stderr.write('output file(s) not be removed, only %t is supported')
+            sys.stderr.write(
+                'output file(s) not be removed, only %t is supported')
         else:
             os.remove(outputfile)
 
@@ -456,7 +521,8 @@ def mpgen_from_file(filename, n_workers=None, from_slurm=False, cleanup=True):  
 
     else:  # non-SLURM: use a single generator for all the samples
 
-        n_samples, generator_seed, samplefile = data['n_samples'], data['generator_seed'], data['samplefile']
+        n_samples, generator_seed, samplefile = data['n_samples'], data[
+            'generator_seed'], data['samplefile']
 
     if n_workers is None:
         n_workers = data['n_workers']
@@ -465,20 +531,32 @@ def mpgen_from_file(filename, n_workers=None, from_slurm=False, cleanup=True):  
     n_workers = np.minimum(n_workers, n_samples)
 
     rng = np.random.RandomState(seed=generator_seed + 2500)
-    summary_seed = rng.randint(0, 2 ** 31)
-    summary = data['summary_class'](*data['summary_args'], seed=summary_seed, **data['summary_kwargs'])
+    summary_seed = rng.randint(0, 2**31)
+    summary = data['summary_class'](*data['summary_args'],
+                                    seed=summary_seed,
+                                    **data['summary_kwargs'])
     prior = data['prior']
-    prior.reseed(rng.randint(0, 2 ** 31))
+    prior.reseed(rng.randint(0, 2**31))
 
     if n_workers > 1:
-        simulator_seeds = [rng.randint(0, 2 ** 31) for _ in range(n_workers)]
+        simulator_seeds = [rng.randint(0, 2**31) for _ in range(n_workers)]
 
-        models = [data['simulator_class'](*data['simulator_args'], seed=s, **data['simulator_kwargs'])
-                  for s in simulator_seeds]
-        g = MPGenerator(models, data['prior'], summary, seed=rng.randint(0, 2**31), verbose=False)
+        models = [
+            data['simulator_class'](*data['simulator_args'],
+                                    seed=s,
+                                    **data['simulator_kwargs'])
+            for s in simulator_seeds
+        ]
+        g = MPGenerator(models,
+                        data['prior'],
+                        summary,
+                        seed=rng.randint(0, 2**31),
+                        verbose=False)
     else:
-        s = rng.randint(0, 2 ** 31)
-        model = data['simulator_class'](*data['simulator_args'], seed=s, **data['simulator_kwargs'])
+        s = rng.randint(0, 2**31)
+        model = data['simulator_class'](*data['simulator_args'],
+                                        seed=s,
+                                        **data['simulator_kwargs'])
         g = Default(model, data['prior'], summary, seed=rng.randint(0, 2**31))
 
     g.proposal = data['proposal']
@@ -491,13 +569,17 @@ def mpgen_from_file(filename, n_workers=None, from_slurm=False, cleanup=True):  
         else:
             next_batchsize = samples_remaining
 
-        next_params, next_stats = g.gen(next_batchsize, **data['generator_kwargs'])
+        next_params, next_stats = g.gen(next_batchsize,
+                                        **data['generator_kwargs'])
         if params is None:
             params, stats = next_params, next_stats
         else:
-            params, stats = np.vstack((params, next_params)), np.vstack((stats, next_stats))
+            params, stats = np.vstack((params, next_params)), np.vstack(
+                (stats, next_stats))
         samples_remaining -= next_params.shape[0]
 
         elapsed_time = time.time() - start_time
         with open(samplefile, 'wb') as f:
-            pickle.dump(dict(params=params, stats=stats, time=elapsed_time), f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(dict(params=params, stats=stats, time=elapsed_time),
+                        f,
+                        protocol=pickle.HIGHEST_PROTOCOL)

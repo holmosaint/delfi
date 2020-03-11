@@ -4,6 +4,7 @@ from delfi.distribution.BaseDistribution import BaseDistribution
 
 
 class Uniform(BaseDistribution):
+
     def __init__(self, lower=0., upper=1., seed=None):
         """Uniform distribution
 
@@ -32,7 +33,7 @@ class Uniform(BaseDistribution):
     @property
     def std(self):
         """Standard deviations of marginals"""
-        return np.sqrt(1/12. * (self.upper - self.lower)**2).reshape(-1)
+        return np.sqrt(1 / 12. * (self.upper - self.lower)**2).reshape(-1)
 
     @copy_ancestor_docstring
     def eval(self, x, ii=None, log=True):
@@ -54,14 +55,15 @@ class Uniform(BaseDistribution):
 
         p = 1.0 / np.prod(self.upper[ii] - self.lower[ii])
         p = p * np.ones((N,))  # broadcasting
-        
+
         # truncation of density
         ind = (x > self.lower[ii]) & (x < self.upper[ii])
-        p[np.prod(ind, axis=1)==0] = 0
+        p[np.prod(ind, axis=1) == 0] = 0
 
         if log:
             if ind.any() == False:
-                raise ValueError('log probability not defined outside of truncation')
+                raise ValueError(
+                    'log probability not defined outside of truncation')
             else:
                 return np.log(p)
         else:
@@ -70,5 +72,6 @@ class Uniform(BaseDistribution):
     @copy_ancestor_docstring
     def gen(self, n_samples=1):
         # See BaseDistribution.py for docstring
-        ms = self.rng.rand(n_samples, self.ndim) * (self.upper - self.lower) + self.lower
+        ms = self.rng.rand(n_samples,
+                           self.ndim) * (self.upper - self.lower) + self.lower
         return ms

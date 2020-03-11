@@ -15,6 +15,9 @@ def combine_trn_datasets(trn_datasets, max_inputs=None):
     n_vars = len(trn_datasets[0])
     if max_inputs is not None:
         n_vars = np.minimum(n_vars, max_inputs)
-    td = [np.concatenate([x[j] for x in trn_datasets], axis=0)
-          for j in range(n_vars)]
+    td = [
+        np.concatenate([x[j]
+                        for x in trn_datasets], axis=0)
+        for j in range(n_vars)
+    ]
     return tuple(td)

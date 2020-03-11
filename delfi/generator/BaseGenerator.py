@@ -6,6 +6,7 @@ from delfi.utils.progress import no_tqdm, progressbar
 
 
 class BaseGenerator(metaclass=ABCMetaDoc):
+
     def __init__(self, model, prior, summary, seed=None):
         """Generator
 
@@ -56,7 +57,12 @@ class BaseGenerator(metaclass=ABCMetaDoc):
         if self.proposal is not None:
             self.proposal.reseed(self.gen_newseed())
 
-    def draw_params(self, n_samples, skip_feedback=False, prior_mixin=0, verbose=True, leave_pbar=True):
+    def draw_params(self,
+                    n_samples,
+                    skip_feedback=False,
+                    prior_mixin=0,
+                    verbose=True,
+                    leave_pbar=True):
         if not verbose:
             pbar = no_tqdm()
         else:
@@ -72,7 +78,8 @@ class BaseGenerator(metaclass=ABCMetaDoc):
             i = 0
             while i < n_samples:
                 # sample parameter
-                if self.proposal is None or self.rng.random_sample() < prior_mixin:
+                if self.proposal is None or self.rng.random_sample(
+                ) < prior_mixin:
                     proposed_param = self.prior.gen(n_samples=1)  # dim params,
                 else:
                     proposed_param = self.proposal.gen(n_samples=1)
@@ -95,14 +102,21 @@ class BaseGenerator(metaclass=ABCMetaDoc):
     def iterate_minibatches(self, params, minibatch=50):
         n_samples = len(params)
 
-        for i in range(0, n_samples - minibatch+1, minibatch):
+        for i in range(0, n_samples - minibatch + 1, minibatch):
             yield params[i:i + minibatch]
 
         rem_i = n_samples - (n_samples % minibatch)
         if rem_i != n_samples:
             yield params[rem_i:]
 
-    def gen(self, n_samples, n_reps=1, skip_feedback=False, prior_mixin=0, minibatch=50, keep_data=True, verbose=True,
+    def gen(self,
+            n_samples,
+            n_reps=1,
+            skip_feedback=False,
+            prior_mixin=0,
+            minibatch=50,
+            keep_data=True,
+            verbose=True,
             leave_pbar=True):
         """Draw parameters and run forward model
 
@@ -150,7 +164,9 @@ class BaseGenerator(metaclass=ABCMetaDoc):
                 # run forward model for all params, each n_reps times
                 result = self.model.gen(params_batch, n_reps=n_reps, pbar=pbar)
 
-                stats, params = self.process_batch(params_batch, result,skip_feedback=skip_feedback)
+                stats, params = self.process_batch(params_batch,
+                                                   result,
+                                                   skip_feedback=skip_feedback)
                 final_params += params
                 final_stats += stats
 
@@ -161,12 +177,12 @@ class BaseGenerator(metaclass=ABCMetaDoc):
 
         # n_samples x dim summary stats
         stats = np.array(final_stats)
-        if len(final_stats)>0:
+        if len(final_stats) > 0:
             stats = stats.squeeze(axis=1)
 
         return params, stats
 
-    def process_batch(self, params_batch, result,skip_feedback=False):
+    def process_batch(self, params_batch, result, skip_feedback=False):
         ret_stats = []
         ret_params = []
 

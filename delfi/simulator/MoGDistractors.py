@@ -5,7 +5,14 @@ from delfi.simulator.BaseSimulator import BaseSimulator
 
 
 class MoGDistractors(BaseSimulator):
-    def __init__(self, dim=2, noise_cov=1.0, distractors=10, p_true=None, n_samples=1, seed=None):
+
+    def __init__(self,
+                 dim=2,
+                 noise_cov=1.0,
+                 distractors=10,
+                 p_true=None,
+                 n_samples=1,
+                 seed=None):
         """Gaussian Mixture simulator
 
         Toy model that draws data from a mixture distribution with 1 "moving" component that depends on the parameters,
@@ -34,7 +41,10 @@ class MoGDistractors(BaseSimulator):
         if type(distractors) is int:
             self.a = np.ones(distractors) / distractors
             self.ms = np.random.rand(distractors, dim) * 20.0 - 10.0
-            self.Ss = [0.1 + 0.9 * np.diag(np.random.rand(dim)) for _ in range(distractors)]
+            self.Ss = [
+                0.1 + 0.9 * np.diag(np.random.rand(dim))
+                for _ in range(distractors)
+            ]
         else:
             assert isinstance(distractors, dd.MoG)
             self.a = distractors.a
@@ -51,8 +61,13 @@ class MoGDistractors(BaseSimulator):
         assert param.ndim == 1
         assert param.shape[0] == self.dim_param
 
-        q_moving = dd.Gaussian(m=param, S=self.noise_cov, seed=self.gen_newseed())
-        q_distractors = dd.MoG(a=self.a, ms=self.ms, Ss=self.Ss, seed=self.gen_newseed())
+        q_moving = dd.Gaussian(m=param,
+                               S=self.noise_cov,
+                               seed=self.gen_newseed())
+        q_distractors = dd.MoG(a=self.a,
+                               ms=self.ms,
+                               Ss=self.Ss,
+                               seed=self.gen_newseed())
 
         samples = []
         for _ in range(self.n_samples):

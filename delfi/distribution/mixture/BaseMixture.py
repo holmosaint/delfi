@@ -24,6 +24,7 @@ class BaseMixture(metaclass=ABCMetaDoc):
     seed : int or None
         If provided, random number generator will be seeded
     """
+
     def __init__(self, a, ncomp, ndim, seed=None):
         self.a = np.asarray(a)
         self.ncomp = ncomp

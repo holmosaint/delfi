@@ -4,9 +4,9 @@
 import os
 os.environ["MKL_THREADING_LAYER"] = "GNU"
 import numpy as np
-from Franke import SinglePathwayModel
-from Franke import *
-from Franke_feature import get_trace_features
+from .Franke import SinglePathwayModel
+from .Franke import *
+from .Franke_feature import get_trace_features
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -70,7 +70,7 @@ class Ribon(BaseSimulator):
         hh_seed = self.gen_newseed()
 
         model = self.RibonModel(params, dt=self.dt, single=True)
-        states = model.run(self.I)[0][pre_step:]
+        states = model.run(self.I)[0][self.pre_step:]
 
         return {
             'data': states.reshape(-1),

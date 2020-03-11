@@ -28,14 +28,18 @@ def svi_kl_init(mps, sps):
     logdet_Sigma1 = sum([tt.sum(2 * sp) for sp in sps])
     logdet_Sigma2 = sum([tt.sum(2 * sp_init) for sp_init in sps_init])
 
-    tr_invSigma2_Sigma1 = sum([tt.sum(tt.exp(2 * (sp - sp_init)))
-                               for sp, sp_init in zip(sps, sps_init)])
+    tr_invSigma2_Sigma1 = sum([
+        tt.sum(tt.exp(2 * (sp - sp_init)))
+        for sp, sp_init in zip(sps, sps_init)
+    ])
 
-    quad_form = sum([tt.sum(((mp - mp_init)**2 / tt.exp(2 * sp_init)))
-                     for mp, mp_init, sp_init in zip(mps, mps_init, sps_init)])
+    quad_form = sum([
+        tt.sum(((mp - mp_init)**2 / tt.exp(2 * sp_init)))
+        for mp, mp_init, sp_init in zip(mps, mps_init, sps_init)
+    ])
 
-    L = 0.5 * (logdet_Sigma2 - logdet_Sigma1 -
-               n_params + tr_invSigma2_Sigma1 + quad_form)
+    L = 0.5 * (logdet_Sigma2 - logdet_Sigma1 - n_params + tr_invSigma2_Sigma1 +
+               quad_form)
 
     # intermediate values that can be monitored
     imvs['reg.logdetP'] = -logdet_Sigma1
@@ -45,8 +49,8 @@ def svi_kl_init(mps, sps):
 
     imvs['reg.quad_form'] = quad_form
     imvs['reg.diff_logdet_Sigma'] = logdet_Sigma2 - logdet_Sigma1
-    imvs['reg.tr_invSigma2_Sigma1'] = tr_invSigma2_Sigma1 
-    imvs['reg.total_dkl'] = L 
+    imvs['reg.tr_invSigma2_Sigma1'] = tr_invSigma2_Sigma1
+    imvs['reg.total_dkl'] = L
 
     return L, imvs
 
@@ -98,14 +102,18 @@ def svi_kl_zero_diag_gauss(mps_wp, sps_wp, mps_bp, sps_bp, a=1.0):
     logdet_Sigma1 = sum([tt.sum(2 * sp) for sp in sps])
     logdet_Sigma2 = sum([tt.sum(2 * sp_prior) for sp_prior in sps_prior])
 
-    tr_invSigma2_Sigma1 = sum([tt.sum(tt.exp(2 * (sp - sp_prior)))
-                               for sp, sp_prior in zip(sps, sps_prior)])
+    tr_invSigma2_Sigma1 = sum([
+        tt.sum(tt.exp(2 * (sp - sp_prior)))
+        for sp, sp_prior in zip(sps, sps_prior)
+    ])
 
-    quad_form = sum([tt.sum(((mp - mp_prior)**2 / tt.exp(2 * sp_prior)))
-                     for mp, mp_prior, sp_prior in zip(mps, mps_prior, sps_prior)])
+    quad_form = sum([
+        tt.sum(((mp - mp_prior)**2 / tt.exp(2 * sp_prior)))
+        for mp, mp_prior, sp_prior in zip(mps, mps_prior, sps_prior)
+    ])
 
-    L = 0.5 * (logdet_Sigma2 - logdet_Sigma1 -
-               n_params + tr_invSigma2_Sigma1 + quad_form)
+    L = 0.5 * (logdet_Sigma2 - logdet_Sigma1 - n_params + tr_invSigma2_Sigma1 +
+               quad_form)
 
     # intermediate values that can be monitored
     imvs['reg.quad_form'] = quad_form

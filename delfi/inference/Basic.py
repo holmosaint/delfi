@@ -6,8 +6,16 @@ from delfi.neuralnet.loss.regularizer import svi_kl_init, svi_kl_zero
 
 
 class Basic(BaseInference):
-    def __init__(self, generator, obs=None, prior_norm=False, pilot_samples=100,
-                 reg_lambda=0.01, seed=None, verbose=True, **kwargs):
+
+    def __init__(self,
+                 generator,
+                 obs=None,
+                 prior_norm=False,
+                 pilot_samples=100,
+                 reg_lambda=0.01,
+                 seed=None,
+                 verbose=True,
+                 **kwargs):
         """Basic inference algorithm
 
         Uses samples from the prior for density estimation likelihood-free
@@ -45,9 +53,12 @@ class Basic(BaseInference):
             Dictionary containing theano variables that can be monitored while
             training the neural network.
         """
-        super().__init__(generator, prior_norm=prior_norm,
-                         pilot_samples=pilot_samples, seed=seed,
-                         verbose=verbose, **kwargs)
+        super().__init__(generator,
+                         prior_norm=prior_norm,
+                         pilot_samples=pilot_samples,
+                         seed=seed,
+                         verbose=verbose,
+                         **kwargs)
         self.obs = obs
         self.reg_lambda = reg_lambda
 
@@ -74,12 +85,19 @@ class Basic(BaseInference):
                 # weights close to those of previous round
                 kl, imvs = svi_kl_init(self.network.mps, self.network.sps)
 
-            loss = loss + 1/N * kl
+            loss = loss + 1 / N * kl
 
         return loss
 
-    def run(self, n_train=100, n_rounds=1, epochs=100, minibatch=50,
-            round_cl=1, stop_on_nan=False, monitor=None, **kwargs):
+    def run(self,
+            n_train=100,
+            n_rounds=1,
+            epochs=100,
+            minibatch=50,
+            round_cl=1,
+            stop_on_nan=False,
+            monitor=None,
+            **kwargs):
         """Run algorithm
 
         Parameters
@@ -125,14 +143,15 @@ class Basic(BaseInference):
             # number of training examples for this round
             if type(n_train) == list:
                 try:
-                    n_train_round = n_train[self.round-1]
+                    n_train_round = n_train[self.round - 1]
                 except:
                     n_train_round = n_train[-1]
             else:
                 n_train_round = n_train
 
             # draw training data (z-transformed params and stats)
-            verbose = '(round {}) '.format(self.round) if self.verbose else False
+            verbose = '(round {}) '.format(
+                self.round) if self.verbose else False
             trn_data = self.gen(n_train_round, verbose=verbose)
             n_train_round = trn_data[0].shape[0]
 
@@ -141,12 +160,16 @@ class Basic(BaseInference):
 
             t = Trainer(self.network,
                         self.loss(N=n_train_round, round_cl=round_cl),
-                        trn_data=trn_data, trn_inputs=trn_inputs,
+                        trn_data=trn_data,
+                        trn_inputs=trn_inputs,
                         seed=self.gen_newseed(),
                         monitor=self.monitor_dict_from_names(monitor),
                         **kwargs)
-            logs.append(t.train(epochs=epochs, minibatch=minibatch,
-                                verbose=verbose, stop_on_nan=stop_on_nan))
+            logs.append(
+                t.train(epochs=epochs,
+                        minibatch=minibatch,
+                        verbose=verbose,
+                        stop_on_nan=stop_on_nan))
             trn_datasets.append(trn_data)
 
             try:

@@ -4,6 +4,7 @@ from delfi.distribution.BaseDistribution import BaseDistribution
 
 
 class Gamma(BaseDistribution):
+
     def __init__(self, alpha=1., beta=1., offset=0., seed=None):
         """Univariate (!) Gamma distribution
 
@@ -26,7 +27,7 @@ class Gamma(BaseDistribution):
         self.alpha = alpha
         self.beta = beta
         self.offset = offset
-        self._gamma = gamma(a=alpha, scale=1./beta)
+        self._gamma = gamma(a=alpha, scale=1. / beta)
 
     @property
     def mean(self):
@@ -36,7 +37,7 @@ class Gamma(BaseDistribution):
     @property
     def std(self):
         """Standard deviations of marginals"""
-        return np.sqrt( self.alpha ) / self.beta
+        return np.sqrt(self.alpha) / self.beta
 
     @copy_ancestor_docstring
     def eval(self, x, ii=None, log=True):
@@ -47,7 +48,8 @@ class Gamma(BaseDistribution):
         assert x.shape[1] == 1, 'x needs second dim'
         assert not x.ndim > 2, 'no more than 2 dims in x'
 
-        res = self._gamma.logpdf(x-self.offset) if log else self._gamma.pdf(x-self.offset)
+        res = self._gamma.logpdf(x - self.offset) if log else self._gamma.pdf(
+            x - self.offset)
         # reshape to (nbatch, )
         return res.reshape(-1)
 
@@ -56,6 +58,6 @@ class Gamma(BaseDistribution):
         # See BaseDistribution.py for docstring
 
         x = self.rng.gamma(shape=self.alpha,
-                           scale=1./self.beta,
+                           scale=1. / self.beta,
                            size=(n_samples, self.ndim)) + self.offset
         return x

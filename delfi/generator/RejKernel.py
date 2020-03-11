@@ -34,5 +34,5 @@ class RejKernel(Default):
     def _feedback_summary_stats(self, sum_stats):
         if self.rej(sum_stats):
             return 'accept'
-        else: 
+        else:
             return 'discard'

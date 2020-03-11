@@ -6,8 +6,18 @@ from delfi.neuralnet.loss.regularizer import svi_kl_init, svi_kl_zero
 
 
 class SNPEB(BaseInference):
-    def __init__(self, generator, obs, prior_norm=False, pilot_samples=100,
-                 convert_to_T=3, reg_lambda=0.01, prior_mixin=0, kernel=None, seed=None, verbose=True,
+
+    def __init__(self,
+                 generator,
+                 obs,
+                 prior_norm=False,
+                 pilot_samples=100,
+                 convert_to_T=3,
+                 reg_lambda=0.01,
+                 prior_mixin=0,
+                 kernel=None,
+                 seed=None,
+                 verbose=True,
                  **kwargs):
         """SNPE-B
 
@@ -56,9 +66,12 @@ class SNPEB(BaseInference):
         """
         assert obs is not None, "SNPE requires observed data"
         self.obs = np.asarray(obs)
-        super().__init__(generator, prior_norm=prior_norm,
-                         pilot_samples=pilot_samples, seed=seed,
-                         verbose=verbose, **kwargs)
+        super().__init__(generator,
+                         prior_norm=prior_norm,
+                         pilot_samples=pilot_samples,
+                         seed=seed,
+                         verbose=verbose,
+                         **kwargs)
 
         if np.any(np.isnan(self.obs)):
             raise ValueError("Observed data contains NaNs")
@@ -105,9 +118,16 @@ class SNPEB(BaseInference):
 
         return loss
 
-    def run(self, n_train=100, n_rounds=2, epochs=100, minibatch=50,
-            round_cl=1, stop_on_nan=False, proposal=None,
-            monitor=None, **kwargs):
+    def run(self,
+            n_train=100,
+            n_rounds=2,
+            epochs=100,
+            minibatch=50,
+            round_cl=1,
+            stop_on_nan=False,
+            proposal=None,
+            monitor=None,
+            **kwargs):
         """Run algorithm
 
         Parameters
@@ -172,17 +192,19 @@ class SNPEB(BaseInference):
             # number of training examples for this round
             if type(n_train) == list:
                 try:
-                    n_train_round = n_train[self.round-1]
+                    n_train_round = n_train[self.round - 1]
                 except:
                     n_train_round = n_train[-1]
             else:
                 n_train_round = n_train
 
-
             # draw training data (z-transformed params and stats)
-            verbose = '(round {}) '.format(self.round) if self.verbose else False
+            verbose = '(round {}) '.format(
+                self.round) if self.verbose else False
 
-            trn_data = self.gen(n_train_round, prior_mixin=self.prior_mixin, verbose=verbose)
+            trn_data = self.gen(n_train_round,
+                                prior_mixin=self.prior_mixin,
+                                verbose=verbose)
             n_train_round = trn_data[0].shape[0]
 
             # precompute importance weights
@@ -190,7 +212,8 @@ class SNPEB(BaseInference):
                 params = self.params_std * trn_data[0] + self.params_mean
                 p_prior = self.generator.prior.eval(params, log=False)
                 p_proposal = self.generator.proposal.eval(params, log=False)
-                iws = p_prior / (self.prior_mixin * p_prior + (1 - self.prior_mixin) * p_proposal)
+                iws = p_prior / (self.prior_mixin * p_prior +
+                                 (1 - self.prior_mixin) * p_proposal)
             else:
                 iws = np.ones((n_train_round,))
 
@@ -201,17 +224,22 @@ class SNPEB(BaseInference):
                 iws *= self.kernel.eval(trn_data[1].reshape(n_train_round, -1))
 
             trn_data = (trn_data[0], trn_data[1], iws)
-            trn_inputs = [self.network.params, self.network.stats,
-                          self.network.iws]
+            trn_inputs = [
+                self.network.params, self.network.stats, self.network.iws
+            ]
 
             t = Trainer(self.network,
                         self.loss(N=n_train_round, round_cl=round_cl),
-                        trn_data=trn_data, trn_inputs=trn_inputs,
+                        trn_data=trn_data,
+                        trn_inputs=trn_inputs,
                         seed=self.gen_newseed(),
                         monitor=self.monitor_dict_from_names(monitor),
                         **kwargs)
-            logs.append(t.train(epochs=epochs, minibatch=minibatch,
-                                verbose=verbose, stop_on_nan=stop_on_nan))
+            logs.append(
+                t.train(epochs=epochs,
+                        minibatch=minibatch,
+                        verbose=verbose,
+                        stop_on_nan=stop_on_nan))
 
             trn_datasets.append(trn_data)
 
@@ -219,7 +247,8 @@ class SNPEB(BaseInference):
                 posteriors.append(self.predict(self.obs))
             except np.linalg.LinAlgError:
                 posteriors.append(None)
-                print("Cannot predict posterior after round {} due to NaNs".format(r))
+                print("Cannot predict posterior after round {} due to NaNs".
+                      format(r))
                 break
 
         return logs, trn_datasets, posteriors

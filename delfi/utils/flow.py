@@ -3,8 +3,16 @@ from delfi.neuralnet.loss.lossfunc import snpe_loss_prior_as_proposal
 from delfi.neuralnet.Trainer import Trainer
 
 
-def normalize_cmaf(cmaf, f_accept, xs, n_samples=10, seed=None, val_frac=0.1,
-                   minibatch=100, epochs=200, verbose=False, stop_on_nan=False):
+def normalize_cmaf(cmaf,
+                   f_accept,
+                   xs,
+                   n_samples=10,
+                   seed=None,
+                   val_frac=0.1,
+                   minibatch=100,
+                   epochs=200,
+                   verbose=False,
+                   stop_on_nan=False):
     from snl.ml.models.mafs import ConditionalMaskedAutoregressiveFlow
     assert isinstance(cmaf, ConditionalMaskedAutoregressiveFlow)
 
@@ -45,7 +53,13 @@ def normalize_cmaf(cmaf, f_accept, xs, n_samples=10, seed=None, val_frac=0.1,
     loss, trn_inputs = snpe_loss_prior_as_proposal(cmaf, svi=False)
     trn_data = (thetas, xs)
 
-    t = Trainer(network=cmaf, loss=loss, trn_data=trn_data,
-                trn_inputs=trn_inputs, seed=seed + 5)
-    log = t.train(epochs=epochs, minibatch=minibatch,
-                  verbose=verbose, stop_on_nan=stop_on_nan, val_frac=val_frac)
+    t = Trainer(network=cmaf,
+                loss=loss,
+                trn_data=trn_data,
+                trn_inputs=trn_inputs,
+                seed=seed + 5)
+    log = t.train(epochs=epochs,
+                  minibatch=minibatch,
+                  verbose=verbose,
+                  stop_on_nan=stop_on_nan,
+                  val_frac=val_frac)

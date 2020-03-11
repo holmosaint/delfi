@@ -1,8 +1,9 @@
 import numpy as np
 from delfi.distribution.BaseDistribution import BaseDistribution
 
+
 class PointMass(BaseDistribution):
-    
+
     def __init__(self, loc, seed=None):
         """Discrete distribution
 
@@ -16,7 +17,7 @@ class PointMass(BaseDistribution):
         self.loc = np.asarray(loc).flatten()
 
         super().__init__(ndim=self.loc.size, seed=seed)
-    
+
     @property
     def mean(self):
         """Means"""
@@ -30,9 +31,9 @@ class PointMass(BaseDistribution):
     @copy_ancestor_docstring
     def eval(self, x, ii=None, log=True):
         assert ii is None
-        pp = np.prod(x==self.loc.reshape(1,-1),axis=1)
-        return np.log(pp) if log else pp # this happily returns -inf
-        
+        pp = np.prod(x == self.loc.reshape(1, -1), axis=1)
+        return np.log(pp) if log else pp  # this happily returns -inf
+
     @copy_ancestor_docstring
     def gen(self, n_samples=1, seed=None):
-        return np.tile(self.loc.reshape(1,-1), (n_samples,1))
+        return np.tile(self.loc.reshape(1, -1), (n_samples, 1))

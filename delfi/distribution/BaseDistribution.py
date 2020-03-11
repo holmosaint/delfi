@@ -5,6 +5,7 @@ from delfi.utils.meta import ABCMetaDoc
 
 
 class BaseDistribution(metaclass=ABCMetaDoc):
+
     def __init__(self, ndim, seed=None):
         """Abstract base class for distributions
 

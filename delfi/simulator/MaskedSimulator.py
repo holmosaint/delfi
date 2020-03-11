@@ -8,6 +8,7 @@ from delfi.simulator import BaseSimulator
 
 
 class MaskedSimulator(BaseSimulator):
+
     def __init__(self, sim, mask, obs, seed=None):
         """Simulator with masked parameters
 
@@ -26,7 +27,8 @@ class MaskedSimulator(BaseSimulator):
         seed : int or None
             See BaseSimulator
         """
-        assert len(mask) == sim.dim_param, "Mask for simulator has incorrect length"
+        assert len(
+            mask) == sim.dim_param, "Mask for simulator has incorrect length"
 
         super().__init__(dim_param=np.count_nonzero(mask), seed=seed)
         self.sim = sim
@@ -38,4 +40,3 @@ class MaskedSimulator(BaseSimulator):
         real_params = self.obs.copy()
         real_params[self.mask] = params
         return self.sim.gen_single(real_params)
-

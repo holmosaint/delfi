@@ -11,10 +11,18 @@ dtype = theano.config.floatX
 
 
 class FullyConnectedLayer(lasagne.layers.Layer):
-    def __init__(self, incoming, n_units, svi=True,
-                 mW_init=linit.HeNormal(), mb_init=linit.Constant([0.]),
-                 sW_init=linit.Constant([-5.]), sb_init=linit.Constant([-5.]),
-                 actfun=lnl.tanh, seed=None, **kwargs):
+
+    def __init__(self,
+                 incoming,
+                 n_units,
+                 svi=True,
+                 mW_init=linit.HeNormal(),
+                 mb_init=linit.Constant([0.]),
+                 sW_init=linit.Constant([-5.]),
+                 sb_init=linit.Constant([-5.]),
+                 actfun=lnl.tanh,
+                 seed=None,
+                 **kwargs):
         """Fully connected layer with optional weight uncertainty
 
         Parameters
@@ -41,23 +49,27 @@ class FullyConnectedLayer(lasagne.layers.Layer):
         self.actfun = actfun
         self.svi = svi
 
-        self.mW = self.add_param(mW_init,
-                                 (self.input_shape[1], self.n_units),
-                                 name='mW', mp=True, wp=True)
-        self.mb = self.add_param(mb_init,
-                                 (self.n_units,),
-                                 name='mb', mp=True, bp=True)
+        self.mW = self.add_param(mW_init, (self.input_shape[1], self.n_units),
+                                 name='mW',
+                                 mp=True,
+                                 wp=True)
+        self.mb = self.add_param(mb_init, (self.n_units,),
+                                 name='mb',
+                                 mp=True,
+                                 bp=True)
 
         if self.svi:
-            self._srng = RandomStreams(
-                lasagne.random.get_rng().randint(
-                    1, 2147462579))
+            self._srng = RandomStreams(lasagne.random.get_rng().randint(
+                1, 2147462579))
             self.sW = self.add_param(sW_init,
                                      (self.input_shape[1], self.n_units),
-                                     name='sW', sp=True, wp=True)
-            self.sb = self.add_param(sb_init,
-                                     (self.n_units,),
-                                     name='sb', sp=True, bp=True)
+                                     name='sW',
+                                     sp=True,
+                                     wp=True)
+            self.sb = self.add_param(sb_init, (self.n_units,),
+                                     name='sb',
+                                     sp=True,
+                                     bp=True)
 
     def get_output_for(self, input, deterministic=False, **kwargs):
         """Returns matrix with shape (batch, n_units)"""

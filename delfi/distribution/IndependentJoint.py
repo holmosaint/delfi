@@ -17,13 +17,14 @@ class IndependentJoint(BaseDistribution):
     seed : int or None
         If provided, random number generator will be seeded
     """
+
     def __init__(self, dists, seed=None):
 
         for d in dists:
             assert not isinstance(d, IndependentJoint), \
                 "IndependentJoint objects cannot be nested"
-        self.dists = [ d for d in dists if d.ndim > 0 ]
-        self.dimlist = [ d.ndim for d in self.dists]
+        self.dists = [d for d in dists if d.ndim > 0]
+        self.dimlist = [d.ndim for d in self.dists]
         ndim = np.sum(self.dimlist)
 
         # self.dist_index_eachdim stores the index of the child distribution
@@ -76,14 +77,16 @@ class IndependentJoint(BaseDistribution):
             xsplit = np.split(x, np.cumsum(self.dimlist), axis=-1)
             ii_children = [None for d in ds]  # full child distribution
 
-        logps = [d.eval(x, ii=ii, log=True)
-                 for d, x, ii in zip(ds, xsplit, ii_children)]
+        logps = [
+            d.eval(x, ii=ii, log=True)
+            for d, x, ii in zip(ds, xsplit, ii_children)
+        ]
         # each element of logps is a vector with one log prob per data point
         logp = np.sum(np.vstack(logps), axis=0)
         return logp if log else np.exp(logp)
 
     def gen(self, n_samples=1):
-        return np.concatenate([ d.gen(n_samples) for d in self.dists ], axis=-1)
+        return np.concatenate([d.gen(n_samples) for d in self.dists], axis=-1)
 
     def reseed(self, seed):
         super().reseed(seed)

@@ -4,6 +4,7 @@ from delfi.distribution.BaseDistribution import BaseDistribution
 
 
 class Logistic(BaseDistribution):
+
     def __init__(self, mu=0.0, s=1.0, seed=None):
         """Distribution with independent dimensions and logistic marginals
 

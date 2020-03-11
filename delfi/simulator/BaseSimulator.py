@@ -6,6 +6,7 @@ from delfi.utils.progress import no_tqdm, progressbar
 
 
 class BaseSimulator(metaclass=ABCMetaDoc):
+
     def __init__(self, dim_param, seed=None):
         """Abstract base class for simulator models
 
