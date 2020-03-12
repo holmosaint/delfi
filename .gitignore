@@ -1,5 +1,7 @@
-<<<<<<< HEAD
 *.zip
+delfi/*/__pychache__/*
+.gitignore
+
 
 =======
 # Development files and python cache
@@ -82,4 +84,4 @@ target/
 *.out
 *.gz
 *.toc
->>>>>>> ff059821866fdc892cc349790d0f8337a2401b56
+

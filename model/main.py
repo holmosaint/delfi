@@ -208,7 +208,7 @@ def run(args):
     prior_lims = np.concatenate(
         (prior_min.reshape(-1, 1), prior_max.reshape(-1, 1)), axis=1)
 
-    posterior_samples = posterior[0].gen(10000)
+    posterior_samples = posterior[-1].gen(10000)
     np.save(os.path.join(result_dir, 'param_samples.npy'), posterior_samples)
     ###################
     # colors
