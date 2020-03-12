@@ -177,7 +177,9 @@ def run(args):
                       pilot_samples=pilot_samples,
                       n_mades=n_mades,
                       prior_norm=prior_norm,
-                      density=density)
+                      density=, 
+                      n_filters=[64, 128, 256, 512],
+                      )
 
     # train
     log, _, posterior = res.run(
@@ -186,7 +188,7 @@ def run(args):
         minibatch=minibatch,
         epochs=epochs,
         silent_fail=False,
-        proposal='prior',
+        proposal='mog',
         val_frac=val_frac,
         verbose=True,
     )
