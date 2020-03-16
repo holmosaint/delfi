@@ -110,8 +110,8 @@ class RibonStats(BaseSummaryStats):
         for r in range(len(repetition_list)):
             x = repetition_list[r]
             assert x['data'].shape[0] == 15996, print(x['data'].shape)
-            sum_stats_vec = get_trace_features(x['data'], self.dt)  #.reshape(1, -1)
-            # sum_stats_vec = x['data']
+            # sum_stats_vec = get_trace_features(x['data'], self.dt)  #.reshape(1, -1)
+            sum_stats_vec = x['data']
             stats.append(sum_stats_vec)
 
         return np.asarray(stats)

@@ -101,8 +101,8 @@ def run(args):
 
     elif model_name == 'Ribon':
         assert dt == 2, print("dt in Ribon model should be 2 currently")
-        assert n_summary == 218, print(
-            "n_summary in Ribon model should be 218 currently")
+        """assert n_summary == 218, print(
+            "n_summary in Ribon model should be 218 currently")"""
 
         pre_step, stim, obs = get_data_pair_lchirp(1, 20000, DATATYPE=1, dt=dt)
         obs_stats = get_trace_features(obs, dt=dt)
@@ -141,6 +141,7 @@ def run(args):
 
         # define model, prior, summary statistics and generator classes
         s = RibonStats(t_on=t_on, t_off=t_off, dt=dt, n_summary=n_summary)
+        obs_stats = s.calc([{'data':obs}])
 
         m = []
         for i in range(n_processes):
@@ -192,16 +193,25 @@ def run(args):
     )
 
     fig = plt.figure(figsize=(15, 5))
-    plt.plot(log[0]['val_loss_iter'],
-             log[0]['val_loss'],
+    val_loss_iter = log[0]['val_loss_iter']
+    val_loss = log[0]['val_loss']
+    loss = log[0]['loss']
+    for i in range(1, len(log)):
+        val_loss_iter = np.concatenate((val_loss_iter, log[i]['val_loss_iter']))
+        val_loss = np.concatenate((val_loss, log[i]['val_loss']))
+        loss = np.concatenate((loss, log[i]['loss']))
+
+    plt.plot(val_loss_iter,
+             val_loss,
              lw=2,
              c='b',
              label='Val')
-    plt.plot(log[0]['loss'], lw=2, c='r', label='Train')
+    plt.plot(loss, lw=2, c='r', label='Train')
     plt.xlabel('iteration')
     plt.ylabel('loss')
     plt.legend()
     plt.savefig(os.path.join(result_dir, 'loss.png'), dpi=400)
+
 
     prior_min = g.prior.lower
     prior_max = g.prior.upper
