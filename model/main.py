@@ -50,6 +50,7 @@ def run(args):
     result_dir = args.result_dir
     dt = args.dt
     density = args.density
+    proposal = args.proposal
     feature_type = args.feature
 
     if model_name == 'HH':
@@ -198,7 +199,7 @@ def run(args):
         minibatch=minibatch,
         epochs=epochs,
         silent_fail=False,
-        proposal='mog',
+        proposal=proposal,
         val_frac=val_frac,
         verbose=True,
     )
@@ -381,6 +382,12 @@ if __name__ == "__main__":
         '-density',
         type=str,
         help='Density for estimation, should be within [mog, maf]')
+    parser.add_argument(
+        '-proposal',
+        type=str,
+        help=
+        'Proposal to use, should be in [prior, gaussion, mog, atomic, atomic_comb]'
+    )
     parser.add_argument('-feature',
                         type=str,
                         help='Feature to use, should be in [He, PCA, Raw]')
