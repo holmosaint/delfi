@@ -49,6 +49,8 @@ def run(args):
     n_mades = args.n_mades  # number of MADES
     result_dir = args.result_dir
     dt = args.dt
+    density = args.density
+    feature_type = args.feature
 
     if model_name == 'HH':
         prior_min = np.array([0.5, 1e-4, 1e-4, 1e-4, 50, 40, 1e-4, 35])
@@ -140,8 +142,12 @@ def run(args):
         t_off = len(stim)
 
         # define model, prior, summary statistics and generator classes
-        s = RibonStats(t_on=t_on, t_off=t_off, dt=dt, n_summary=n_summary)
-        obs_stats = s.calc([{'data':obs}])
+        s = RibonStats(t_on=t_on,
+                       t_off=t_off,
+                       dt=dt,
+                       n_summary=n_summary,
+                       _type=feature_type)
+        obs_stats = s.calc([{'data': obs}])
 
         m = []
         for i in range(n_processes):
@@ -164,23 +170,26 @@ def run(args):
     # convenience
     prior_norm = True
 
-    # MAF parameters
-    density = 'maf'
+    # Density
+    # density = 'maf'
+    assert density in ['maf', 'mog'], print(
+        "Density should be in [mog, maf], but got {}".format(density))
 
     if pilot_file is not None:
         pilot_samples = load_data(pilot_file)
 
     # inference object
-    res = infer.SNPEC(g,
-                      obs=obs_stats,
-                      n_hiddens=n_hiddens,
-                      seed=np.random.randint(1000),
-                      pilot_samples=pilot_samples,
-                      n_mades=n_mades,
-                      prior_norm=prior_norm,
-                      density=, 
-                      n_filters=[64, 128, 256, 512],
-                      )
+    res = infer.SNPEC(
+        g,
+        obs=obs_stats,
+        n_hiddens=n_hiddens,
+        seed=np.random.randint(1000),
+        pilot_samples=pilot_samples,
+        n_mades=n_mades,
+        prior_norm=prior_norm,
+        density=density,
+        n_filters=[64, 128, 256, 512],
+    )
 
     # train
     log, _, posterior = res.run(
@@ -198,22 +207,20 @@ def run(args):
     val_loss_iter = log[0]['val_loss_iter']
     val_loss = log[0]['val_loss']
     loss = log[0]['loss']
+    _len = loss.reshape(-1).shape[0]
     for i in range(1, len(log)):
-        val_loss_iter = np.concatenate((val_loss_iter, log[i]['val_loss_iter']))
+        val_loss_iter = np.concatenate(
+            (val_loss_iter, log[i]['val_loss_iter'] + _len))
         val_loss = np.concatenate((val_loss, log[i]['val_loss']))
         loss = np.concatenate((loss, log[i]['loss']))
+        _len += log[i]['loss'].reshape(-1).shape[0]
 
-    plt.plot(val_loss_iter,
-             val_loss,
-             lw=2,
-             c='b',
-             label='Val')
+    plt.plot(val_loss_iter, val_loss, lw=2, c='b', label='Val')
     plt.plot(loss, lw=2, c='r', label='Train')
     plt.xlabel('iteration')
     plt.ylabel('loss')
     plt.legend()
     plt.savefig(os.path.join(result_dir, 'loss.png'), dpi=400)
-
 
     prior_min = g.prior.lower
     prior_max = g.prior.upper
@@ -370,6 +377,13 @@ if __name__ == "__main__":
                         type=int,
                         default=5,
                         help='Number of MADEs, default: 5')
+    parser.add_argument(
+        '-density',
+        type=str,
+        help='Density for estimation, should be within [mog, maf]')
+    parser.add_argument('-feature',
+                        type=str,
+                        help='Feature to use, should be in [He, PCA, Raw]')
     parser.add_argument('-result_dir',
                         type=str,
                         help='Path to store the results')
