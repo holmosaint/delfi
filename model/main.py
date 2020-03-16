@@ -177,7 +177,9 @@ def run(args):
                       pilot_samples=pilot_samples,
                       n_mades=n_mades,
                       prior_norm=prior_norm,
-                      density=density)
+                      density=, 
+                      n_filters=[64, 128, 256, 512],
+                      )
 
     # train
     log, _, posterior = res.run(
@@ -186,7 +188,7 @@ def run(args):
         minibatch=minibatch,
         epochs=epochs,
         silent_fail=False,
-        proposal='prior',
+        proposal='mog',
         val_frac=val_frac,
         verbose=True,
     )
@@ -208,7 +210,7 @@ def run(args):
     prior_lims = np.concatenate(
         (prior_min.reshape(-1, 1), prior_max.reshape(-1, 1)), axis=1)
 
-    posterior_samples = posterior[0].gen(10000)
+    posterior_samples = posterior[-1].gen(10000)
     np.save(os.path.join(result_dir, 'param_samples.npy'), posterior_samples)
     ###################
     # colors
