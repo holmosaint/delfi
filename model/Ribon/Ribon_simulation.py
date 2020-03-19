@@ -18,6 +18,7 @@ import delfi.generator as dg
 from delfi.utils.viz import samples_nd
 import delfi.inference as infer
 from sklearn.decomposition import PCA
+import h5py
 
 
 class Ribon(BaseSimulator):
@@ -87,7 +88,14 @@ class RibonStats(BaseSummaryStats):
     Calculates summary statistics
     """
 
-    def __init__(self, t_on, t_off, dt, n_summary, _type='He', seed=None):
+    def __init__(self,
+                 t_on,
+                 t_off,
+                 dt,
+                 n_summary,
+                 _type='He',
+                 seed=None,
+                 PCA_file=None):
         """See SummaryStats.py for docstring"""
         super(RibonStats, self).__init__(seed=seed)
         self.t_on = t_on
@@ -99,6 +107,7 @@ class RibonStats(BaseSummaryStats):
             "Type for Ribon statistics should be within ['PCA', 'He', 'Raw'], but got {}"
             .format(self.type))
         self.round = 0
+        self.PCA_file = PCA_file
 
     def calc(self, repetition_list):
         """Calculate summary statistics
@@ -113,18 +122,29 @@ class RibonStats(BaseSummaryStats):
         np.array, 2d with n_reps x n_summary
         """
         stats = list()
-        raw_list = list()
         for r in range(len(repetition_list)):
             x = repetition_list[r]
             assert x['data'].shape[0] == 15996, print(x['data'].shape)
             if self.type == 'He':
                 sum_stats_vec = get_trace_features(x['data'], self.dt)  #.reshape(1, -1)
                 stats.append(sum_stats_vec)
+
             elif self.type == 'Raw':
                 sum_stats_vec = x['data']
                 stats.append(sum_stats_vec)
 
             elif self.type == 'PCA':
-                raise NotImplementedError
+                assert self.PCA_file is not None, print(
+                    "PCA file should not be none")
+
+                sum_stats_vec = np.zeros((1, 25 * 3))
+                with h5py.File(self.PCA_file) as f:
+                    for i in range(3):
+                        if i < 2:
+                            res = x['data'][i * 5000:(i + 1) * 5000].reshape(
+                                -1, 1)
+                            PCA_matrix = f.get(str(i))[...]
+                            sum_stats_vec[i * 25:(i + 1) * 25] = np.matmul(
+                                PCA_matrix, res.T)
 
         return np.asarray(stats)
