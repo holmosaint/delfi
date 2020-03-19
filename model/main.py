@@ -48,6 +48,7 @@ def run(args):
     n_hiddens = [dim_hiddens for i in range(hidden_layer)]
     n_mades = args.n_mades  # number of MADES
     result_dir = args.result_dir
+    PCA_file = args.PCA_file
     dt = args.dt
     density = args.density
     proposal = args.proposal
@@ -147,7 +148,8 @@ def run(args):
                        t_off=t_off,
                        dt=dt,
                        n_summary=n_summary,
-                       _type=feature_type)
+                       _type=feature_type,
+                       PCA_file=PCA_file)
         obs_stats = s.calc([{'data': obs}])
         n_summary = obs_stats.reshape(-1).shape[0]
         print("n summary: ", n_summary)
@@ -399,6 +401,10 @@ if __name__ == "__main__":
     parser.add_argument('-result_dir',
                         type=str,
                         help='Path to store the results')
+    parser.add_argument('-PCA_file',
+                        type=str,
+                        default=None,
+                        help='Path to PCA_file')
     parser.add_argument('-dt', type=int, help='dt')
 
     args = parser.parse_args()
