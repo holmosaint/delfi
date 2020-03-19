@@ -149,7 +149,8 @@ def run(args):
                        n_summary=n_summary,
                        _type=feature_type)
         obs_stats = s.calc([{'data': obs}])
-
+        n_summary = obs_stats.reshape(-1).shape[0]
+        print("n summary: ", n_summary)
         m = []
         for i in range(n_processes):
             m.append(
@@ -180,6 +181,10 @@ def run(args):
         pilot_samples = load_data(pilot_file)
 
     # inference object
+    if feature_type == 'Raw':
+        n_filters = [64, 128, 256, 512]
+    else:
+        n_filters = ()
     res = infer.SNPEC(
         g,
         obs=obs_stats,
@@ -187,9 +192,9 @@ def run(args):
         seed=np.random.randint(1000),
         pilot_samples=pilot_samples,
         n_mades=n_mades,
-        prior_norm=prior_norm,
+        # prior_norm=prior_norm,
         density=density,
-        n_filters=[64, 128, 256, 512],
+        # n_filters=n_filters,
     )
 
     # train
