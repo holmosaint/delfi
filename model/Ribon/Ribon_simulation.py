@@ -122,29 +122,30 @@ class RibonStats(BaseSummaryStats):
         np.array, 2d with n_reps x n_summary
         """
         stats = list()
-        for r in range(len(repetition_list)):
-            x = repetition_list[r]
-            assert x['data'].shape[0] == 15996, print(x['data'].shape)
-            if self.type == 'He':
-                sum_stats_vec = get_trace_features(x['data'], self.dt)  #.reshape(1, -1)
-                stats.append(sum_stats_vec)
+        with h5py.File(self.PCA_file, 'r') as f:
+            for r in range(len(repetition_list)):
+                x = repetition_list[r]
+                assert x['data'].shape[0] == 15996, print(x['data'].shape)
+                if self.type == 'He':
+                    sum_stats_vec = get_trace_features(x['data'], self.dt)  #.reshape(1, -1)
 
-            elif self.type == 'Raw':
-                sum_stats_vec = x['data']
-                stats.append(sum_stats_vec)
-
-            elif self.type == 'PCA':
-                assert self.PCA_file is not None, print(
-                    "PCA file should not be none")
-
-                sum_stats_vec = np.zeros((1, 25 * 3))
-                with h5py.File(self.PCA_file) as f:
-                    for i in range(3):
-                        if i < 2:
-                            res = x['data'][i * 5000:(i + 1) * 5000].reshape(
-                                -1, 1)
+                elif self.type == 'Raw':
+                    sum_stats_vec = x['data']
+    
+                elif self.type == 'PCA':
+                    assert self.PCA_file is not None, print(
+                        "PCA file should not be none")
+    
+                    sum_stats_vec = np.zeros((25 * 3))
+                    with h5py.File(self.PCA_file, 'r') as f:
+                        for i in range(3):
+                            if i < 2:
+                                res = x['data'][i * 5000:(i + 1) * 5000].reshape(
+                                    -1, 1)
+                            else:
+                                res = x['data'][i * 5000:].reshape(-1, 1)
                             PCA_matrix = f.get(str(i))[...]
-                            sum_stats_vec[i * 25:(i + 1) * 25] = np.matmul(
-                                PCA_matrix, res.T)
-
+                            sum_stats_vec[i * 25:(i + 1) * 25] = np.matmul(PCA_matrix, res).reshape(-1)
+            
+                stats.append(sum_stats_vec)
         return np.asarray(stats)
