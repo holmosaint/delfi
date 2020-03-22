@@ -108,18 +108,18 @@ class BaseExtractor(ABC):
         pass
 
 
-class PredictiveFeatureExtractor(BaseExtractor):
+class TimeContrastiveFeatureExtractor(BaseExtractor):
 
     def __init__(self, n_segments, res_layers, store_path, input_dim=1):
 
-        self.model_name = 'predictive'
+        self.model_name = 'time_contrastive'
         self.store_path = store_path
 
         self.n_segments = n_segments
         self.res_layers = res_layers
         self.input_dim = input_dim
 
-        self.net = PredctiveNeuralNetowork(n_segments, res_layers, input_dim)
+        self.net = TimeContrastiveNeuralNetowork(n_segments, res_layers, input_dim)
 
         self.loss_func = nn.NLLLoss()
 
@@ -133,7 +133,7 @@ class PredictiveFeatureExtractor(BaseExtractor):
         raise NotImplementedError
 
 
-class PredctiveNeuralNetowork(nn.Module):
+class TimeContrastiveNeuralNetowork(nn.Module):
 
     def __init__(self, n_segments, res_layers, input_dim):
         self.n_segments = n_segments
