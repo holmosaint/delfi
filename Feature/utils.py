@@ -41,8 +41,7 @@ class MyDataset(Data.Dataset):
     def __getitem__(self, index):
         Input = self.data.get('trace')[index + self.offset].astype(np.float32)
         try:
-            label = self.data.get('label')[index + self.offset].astype(
-                np.float32)
+            label = self.data.get('label')[index + self.offset]
         except:
             label = None
 

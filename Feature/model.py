@@ -1,9 +1,13 @@
 import numpy as np
+import time
+
 import torch
 import torch.nn as nn
+
 from abc import ABC, abstractmethod
+
 from resnet import resnet18, resnet34, resnet50, resnet101
-from utils import checkpoint, save_checkpoint
+from utils import save_checkpoint
 
 
 class BaseExtractor(ABC):
@@ -13,8 +17,11 @@ class BaseExtractor(ABC):
 
     def run_epoch(self, data_loader, opt=None, cuda=True, back=True):
         loss_list = list()
+
         if back:
             for batch_idx, (Input, label) in enumerate(data_loader):
+                print("Processing batch {}".format(batch_idx), end='\r')
+
                 if cuda:
                     Input = Input.cuda()
                     label = label.cuda()
@@ -30,6 +37,8 @@ class BaseExtractor(ABC):
         else:
             with torch.no_grad():
                 for batch_idx, (Input, label) in enumerate(data_loader):
+                    print("Processing batch {}".format(batch_idx), end='\r')
+
                     if cuda:
                         Input = Input.cuda()
                         label = label.cuda()
@@ -49,7 +58,7 @@ class BaseExtractor(ABC):
               cuda=True,
               lr=1e-4):
         opt_Adam = torch.optim.Adam(filter(lambda p: p.requires_grad,
-                                           self.extractor.net.parameters()),
+                                           self.net.parameters()),
                                     lr=lr)
 
         train_loss_list = list()
@@ -58,7 +67,11 @@ class BaseExtractor(ABC):
         not_improve = 0
         last_loss = 1e8
 
+        if cuda:
+            self.net.cuda()
+
         for e in range(epoch):
+            s_time = time.time()
 
             train_loss = self.run_epoch(data_loader,
                                         opt_Adam,
@@ -74,20 +87,19 @@ class BaseExtractor(ABC):
                 val_loss_list.append(val_loss)
                 cur_loss = val_loss
 
+            e_time = time.time()
             print("Epoch {}.\tTrain loss: {}".format(e, train_loss), end='')
             if val_data_loader is not None:
-                print("\tVal loss: {}".format(val_loss))
-            else:
-                print()
+                print("\tVal loss: {}".format(val_loss), end='')
+            print("\tTime: {}s".format(e_time - s_time))
 
             if cur_loss < last_loss:
                 not_improve = 0
                 last_loss = cur_loss
 
                 save_checkpoint(self.store_path, self.model_name + ".h5", e,
-                                self.extractor.net.state_dict(),
-                                opt_Adam.state_dict(), train_loss_list,
-                                val_loss_list)
+                                self.net.state_dict(), opt_Adam.state_dict(),
+                                train_loss_list, val_loss_list)
             else:
                 not_improve += 1
 
@@ -119,7 +131,8 @@ class TimeContrastiveFeatureExtractor(BaseExtractor):
         self.res_layers = res_layers
         self.input_dim = input_dim
 
-        self.net = TimeContrastiveNeuralNetowork(n_segments, res_layers, input_dim)
+        self.net = TimeContrastiveNeuralNetwork(n_segments, res_layers,
+                                                input_dim)
 
         self.loss_func = nn.NLLLoss()
 
@@ -133,9 +146,11 @@ class TimeContrastiveFeatureExtractor(BaseExtractor):
         raise NotImplementedError
 
 
-class TimeContrastiveNeuralNetowork(nn.Module):
+class TimeContrastiveNeuralNetwork(nn.Module):
 
     def __init__(self, n_segments, res_layers, input_dim):
+        super(TimeContrastiveNeuralNetwork, self).__init__()
+
         self.n_segments = n_segments
         self.res_layers = res_layers
         self.input_dim = input_dim
@@ -150,7 +165,8 @@ class TimeContrastiveNeuralNetowork(nn.Module):
             self.extractor = resnet101(input_dim)
 
         self.fc = nn.Sequential(*[
-            nn.Linear(512, self.n_segments),
+            nn.Flatten(),
+            nn.Linear(85504, self.n_segments),
             nn.LogSoftmax(dim=-1),
         ])
 
