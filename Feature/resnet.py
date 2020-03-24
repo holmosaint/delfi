@@ -4,7 +4,7 @@ try:
     from torch.hub import load_state_dict_from_url
 except ImportError:
     from torch.utils.model_zoo import load_url as load_state_dict_from_url
-from utils import init_lstm_hidden
+from .utils import init_lstm_hidden
 
 __all__ = [
     'ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',
