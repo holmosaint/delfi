@@ -8,9 +8,9 @@ from delfi.generator.Default import Default
 from delfi.utils.progress import no_tqdm, progressbar
 import time
 import h5py
+import torch.multiprocessing as torchmp
 
-
-class Worker(mp.Process):
+class Worker(torchmp.Process):
 
     def __init__(self,
                  n,
