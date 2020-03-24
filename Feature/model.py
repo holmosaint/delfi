@@ -6,8 +6,8 @@ import torch.nn as nn
 
 from abc import ABC, abstractmethod
 
-from resnet import resnet18, resnet34, resnet50, resnet101
-from utils import save_checkpoint, load_checkpoint
+from .resnet import resnet18, resnet34, resnet50, resnet101
+from .utils import save_checkpoint, load_checkpoint
 
 
 class BaseExtractor(ABC):
