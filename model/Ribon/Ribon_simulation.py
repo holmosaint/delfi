@@ -19,6 +19,7 @@ from delfi.utils.viz import samples_nd
 import delfi.inference as infer
 from sklearn.decomposition import PCA
 import h5py
+import torch
 
 from Feature.utils import load_checkpoint
 from Feature.model import TimeContrastiveFeatureExtractor
@@ -115,6 +116,7 @@ class RibonStats(BaseSummaryStats):
         
         if self.type == 'TCL':
             self.extractor = TimeContrastiveFeatureExtractor(**kwargs)
+            self.extractor.net.cuda()
             checkpoint = load_checkpoint(model_path)
             self.extractor.net.load_state_dict(checkpoint['model_state_dict'])
 
@@ -134,30 +136,36 @@ class RibonStats(BaseSummaryStats):
         if self.type == 'PCA':
             f = h5py.File(self.model_path, 'r')
 
-        for r in range(len(repetition_list)):
-            x = repetition_list[r]
-            assert x['data'].shape[0] == 15996, print(x['data'].shape)
-            if self.type == 'He':
-                sum_stats_vec = get_trace_features(x['data'], self.dt)  #.reshape(1, -1)
+        
+        if self.type == 'TCL':
+            for r in range(0, len(repetition_list), 100):
+                d_array = np.concatenate([d['data'].reshape(1, 1, -1) for d in repetition_list[r:r+128]], axis=0).astype(np.float32)
+                d_array = torch.from_numpy(d_array).cuda()
+                feature = self.extractor.get_feature(d_array).reshape(128, -1)
+                for i in range(100):
+                    stats.append(feature[i])
+        else:
 
-            elif self.type == 'Raw':
-                sum_stats_vec = x['data']
+            for r in range(len(repetition_list)):
+                x = repetition_list[r]
+                assert x['data'].shape[0] == 15996, print(x['data'].shape)
+                if self.type == 'He':
+                    sum_stats_vec = get_trace_features(x['data'], self.dt)  #.reshape(1, -1)
     
-            elif self.type == 'PCA':
-
-                sum_stats_vec = np.zeros((25 * 3))
-                with h5py.File(self.model_path, 'r') as f:
-                    for i in range(3):
-                        if i < 2:
-                            res = x['data'][i * 5000:(i + 1) * 5000].reshape(-1, 1)
-                        else:
-                            res = x['data'][i * 5000:].reshape(-1, 1)
-                        PCA_matrix = f.get(str(i))[...]
-                        sum_stats_vec[i * 25:(i + 1) * 25] = np.matmul(PCA_matrix, res).reshape(-1)
-            
-            elif self.type == 'TCL':
-                
-                sum_stats_vec = self.extractor.get_feature(x['data'])
+                elif self.type == 'Raw':
+                    sum_stats_vec = x['data']
+        
+                elif self.type == 'PCA':
+    
+                    sum_stats_vec = np.zeros((25 * 3))
+                    with h5py.File(self.model_path, 'r') as f:
+                        for i in range(3):
+                            if i < 2:
+                                res = x['data'][i * 5000:(i + 1) * 5000].reshape(-1, 1)
+                            else:
+                                res = x['data'][i * 5000:].reshape(-1, 1)
+                            PCA_matrix = f.get(str(i))[...]
+                            sum_stats_vec[i * 25:(i + 1) * 25] = np.matmul(PCA_matrix, res).reshape(-1)
         
             stats.append(sum_stats_vec)
     
