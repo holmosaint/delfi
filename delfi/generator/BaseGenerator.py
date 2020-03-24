@@ -82,10 +82,13 @@ class BaseGenerator(metaclass=ABCMetaDoc):
                 ) < prior_mixin:
                     proposed_param = self.prior.gen(n_samples=1)  # dim params,
                 else:
+                    print("Using proposal for generation")
+                    print("Proposal: ", self.proposal)
                     proposed_param = self.proposal.gen(n_samples=1)
 
                 # check if parameter vector is valid
                 response = self._feedback_proposed_param(proposed_param)
+                print("Response: {} proposed_param: {}".format(response, proposed_param))
                 if response == 'accept' or skip_feedback:
                     # add valid param vector to list
                     params.append(proposed_param.reshape(-1))

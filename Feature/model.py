@@ -7,7 +7,7 @@ import torch.nn as nn
 from abc import ABC, abstractmethod
 
 from resnet import resnet18, resnet34, resnet50, resnet101
-from utils import save_checkpoint
+from utils import save_checkpoint, load_checkpoint
 
 
 class BaseExtractor(ABC):
@@ -117,12 +117,15 @@ class BaseExtractor(ABC):
 
     @abstractmethod
     def forward(self, input):
+        """
+        Return Numpy cpu array
+        """
         pass
 
 
 class TimeContrastiveFeatureExtractor(BaseExtractor):
 
-    def __init__(self, n_segments, res_layers, store_path, input_dim=1):
+    def __init__(self, n_segments=3, res_layers=18, store_path=None, input_dim=1):
 
         self.model_name = 'time_contrastive'
         self.store_path = store_path
@@ -142,8 +145,9 @@ class TimeContrastiveFeatureExtractor(BaseExtractor):
     def forward(self, Input):
         return self.net(Input)
 
-    def get_feature(self, input):
-        raise NotImplementedError
+    def get_feature(self, Input):
+        with torch.no_grad():
+            return self.net.get_feature(Input).cpu().numpy().reshape(-1)
 
 
 class TimeContrastiveNeuralNetwork(nn.Module):
@@ -174,3 +178,6 @@ class TimeContrastiveNeuralNetwork(nn.Module):
         x = self.extractor(Input)
         x = self.fc(x)
         return x
+    
+    def get_feature(self, Input):
+        return self.extractor(Input)

@@ -20,6 +20,9 @@ import delfi.inference as infer
 from sklearn.decomposition import PCA
 import h5py
 
+from Feature.utils import load_checkpoint
+from Feature.model import TimeContrastiveFeatureExtractor
+
 
 class Ribon(BaseSimulator):
 
@@ -95,7 +98,8 @@ class RibonStats(BaseSummaryStats):
                  n_summary,
                  _type='He',
                  seed=None,
-                 PCA_file=None):
+                 model_path=None,
+                 **kwargs):
         """See SummaryStats.py for docstring"""
         super(RibonStats, self).__init__(seed=seed)
         self.t_on = t_on
@@ -103,11 +107,16 @@ class RibonStats(BaseSummaryStats):
         self.dt = dt
         self.n_summary = n_summary
         self.type = _type
-        assert self.type in ['PCA', 'He', 'Raw'], print(
-            "Type for Ribon statistics should be within ['PCA', 'He', 'Raw'], but got {}"
+        assert self.type in ['PCA', 'He', 'Raw', 'TCL'], print(
+            "Type for Ribon statistics should be within ['PCA', 'He', 'Raw', 'TCL'], but got {}"
             .format(self.type))
         self.round = 0
-        self.PCA_file = PCA_file
+        self.model_path = model_path
+        
+        if self.type == 'TCL':
+            self.extractor = TimeContrastiveFeatureExtractor(**kwargs)
+            checkpoint = load_checkpoint(model_path)
+            self.extractor.net.load_state_dict(checkpoint['model_state_dict'])
 
     def calc(self, repetition_list):
         """Calculate summary statistics
@@ -123,7 +132,7 @@ class RibonStats(BaseSummaryStats):
         """
         stats = list()
         if self.type == 'PCA':
-            f = fh5py.file(self.PCA_file, 'r')
+            f = h5py.File(self.model_path, 'r')
 
         for r in range(len(repetition_list)):
             x = repetition_list[r]
@@ -135,11 +144,9 @@ class RibonStats(BaseSummaryStats):
                 sum_stats_vec = x['data']
     
             elif self.type == 'PCA':
-                assert self.PCA_file is not None, print(
-                    "PCA file should not be none")
 
                 sum_stats_vec = np.zeros((25 * 3))
-                with h5py.File(self.PCA_file, 'r') as f:
+                with h5py.File(self.model_path, 'r') as f:
                     for i in range(3):
                         if i < 2:
                             res = x['data'][i * 5000:(i + 1) * 5000].reshape(-1, 1)
@@ -147,6 +154,10 @@ class RibonStats(BaseSummaryStats):
                             res = x['data'][i * 5000:].reshape(-1, 1)
                         PCA_matrix = f.get(str(i))[...]
                         sum_stats_vec[i * 25:(i + 1) * 25] = np.matmul(PCA_matrix, res).reshape(-1)
+            
+            elif self.type == 'TCL':
+                
+                sum_stats_vec = self.extractor.get_feature(x['data'])
         
             stats.append(sum_stats_vec)
     

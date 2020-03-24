@@ -48,11 +48,19 @@ def run(args):
     n_hiddens = [dim_hiddens for i in range(hidden_layer)]
     n_mades = args.n_mades  # number of MADES
     result_dir = args.result_dir
-    PCA_file = args.PCA_file
+    model_path = args.model_path
     dt = args.dt
     density = args.density
     proposal = args.proposal
     feature_type = args.feature
+
+    # TCL arguments
+    n_segments = args.n_segments
+    res_layers = args.res_layers
+    store_path = result_dir
+    kwargs = {'n_segments': n_segments,
+              'res_layers': res_layers,
+              'store_path': store_path}
 
     if model_name == 'HH':
         prior_min = np.array([0.5, 1e-4, 1e-4, 1e-4, 50, 40, 1e-4, 35])
@@ -149,7 +157,8 @@ def run(args):
                        dt=dt,
                        n_summary=n_summary,
                        _type=feature_type,
-                       PCA_file=PCA_file)
+                       model_path=model_path, 
+                       **kwargs)
         obs_stats = s.calc([{'data': obs}])
         n_summary = obs_stats.reshape(-1).shape[0]
         print("n summary: ", n_summary)
@@ -397,14 +406,14 @@ if __name__ == "__main__":
     )
     parser.add_argument('-feature',
                         type=str,
-                        help='Feature to use, should be in [He, PCA, Raw]')
+                        help='Feature to use, should be in [He, PCA, Raw, TCL]')
     parser.add_argument('-result_dir',
                         type=str,
                         help='Path to store the results')
-    parser.add_argument('-PCA_file',
+    parser.add_argument('-model_path',
                         type=str,
                         default=None,
-                        help='Path to PCA_file')
+                        help='Path to feature model')
     parser.add_argument('-dt', type=int, help='dt')
 
     args = parser.parse_args()

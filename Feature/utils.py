@@ -65,12 +65,12 @@ def save_checkpoint(store_dir, file_name, epoch, model_state_dict,
 
 def load_checkpoint(model_path):
     checkpoint = torch.load(model_path)
-    new_checkpoint = OrderedDict()
+    """new_checkpoint = OrderedDict()
     for k, v in checkpoint['model_state_dict'].items():
         # print('Name:', k)
         name = k[7:]  # remove 'module.' of dataparallel
         new_checkpoint[name] = v
-    checkpoint['model_state_dict'] = new_checkpoint
+    checkpoint['model_state_dict'] = new_checkpoint"""
     return checkpoint
 
 
