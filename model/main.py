@@ -415,6 +415,14 @@ if __name__ == "__main__":
                         default=None,
                         help='Path to feature model')
     parser.add_argument('-dt', type=int, help='dt')
+    parser.add_argument('-n_segments',
+                        type=int,
+                        default=None,
+                        help='# of segments in TCL')
+    parser.add_argument('-res_layers',
+                        type=int,
+                        default=None,
+                        help='# of res layers')
 
     args = parser.parse_args()
 
