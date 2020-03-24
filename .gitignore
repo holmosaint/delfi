@@ -1,3 +1,13 @@
 *.zip
 .vscode/*
+delfi/__pycache__/*
+delfi/simulator/__pycache__/*
+delfi/summarystats/__pycache__/*
+delfi/utils/__pycache__/*
+delfi/neuralnet/layers/__pycache__/*
+delfi/simulator/__pycache__/*
+delfi/neuralnet/__pycache__/*
+delfi/inference/__pycache__/*
+delfi/distribution/mixture/__pycache__/*
+delfi/distribution/__pycache__/*
 *.yml
