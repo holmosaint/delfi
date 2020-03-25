@@ -53,6 +53,7 @@ def run(args):
     density = args.density
     proposal = args.proposal
     feature_type = args.feature
+    dispatch = args.dispatch
 
     # TCL arguments
     n_segments = args.n_segments
@@ -175,6 +176,7 @@ def run(args):
         g = dg.MPGenerator(models=m,
                            prior=prior,
                            summary=s,
+                           dispatch=dispatch
                            data_file_name=store_file)
 
     else:
@@ -422,6 +424,10 @@ if __name__ == "__main__":
     parser.add_argument('-res_layers',
                         type=int,
                         default=None,
+                        help='# of res layers')
+    parser.add_argument('-dispatch',
+                        type=int,
+                        default=0,
                         help='# of res layers')
 
     args = parser.parse_args()

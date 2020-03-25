@@ -112,11 +112,11 @@ class BaseExtractor(ABC):
         pass
 
     @abstractmethod
-    def get_feature(self, Input):
+    def forward(self, Input):
         pass
 
     @abstractmethod
-    def forward(self, input):
+    def get_feature(self, Input):
         """
         Return Numpy cpu array
         """

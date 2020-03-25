@@ -10,7 +10,7 @@ import time
 import h5py
 import torch.multiprocessing as torchmp
 
-class Worker(mp.Process):
+class Worker(torchmp.Process):
 
     def __init__(self,
                  n,
@@ -19,7 +19,8 @@ class Worker(mp.Process):
                  model,
                  summary,
                  seed=None,
-                 verbose=False):
+                 verbose=False,
+                 dispatch=False):
         super().__init__()
         self.n = n
         self.queue = queue
@@ -28,6 +29,7 @@ class Worker(mp.Process):
         self.model = model
         self.summary = summary
         self.rng = np.random.RandomState(seed=seed)
+        self.dispatch = dispatch
 
     def update(self, i):
         self.queue.put(i)
@@ -50,7 +52,10 @@ class Worker(mp.Process):
             self.log("Received data of size {}".format(len(params_batch)))
             result = self.model.gen(params_batch, pbar=self)
 
-            stats, params = self.process_batch(params_batch, result)
+            if self.dispatch is False:
+                stats, params = self.process_batch(params_batch, result)
+            else:
+                stats, params = result, params_batch
 
             self.log("Sending data")
             self.queue.put((stats, params))
@@ -86,8 +91,6 @@ class Worker(mp.Process):
 def default_MPGenerator_rej(x):
     return 1
 
-class TorchWorker()
-
 class MPGenerator(Default):
 
     def __init__(self,
@@ -97,7 +100,8 @@ class MPGenerator(Default):
                  data_file_name=None,
                  rej=None,
                  seed=None,
-                 verbose=False):
+                 verbose=False,
+                 dispatch=False):
         """Generator supporting multiprocessing
 
         Parameters
@@ -125,6 +129,7 @@ class MPGenerator(Default):
         self.models = models
         self.data_file_name = data_file_name
         self.workers = None
+        self.dispatch = dispatch
 
     def reseed(self, seed):
         """Carries out the following operations, in order:
@@ -153,7 +158,8 @@ class MPGenerator(Default):
                    self.models[i],
                    self.summary,
                    seed=self.rng.randint(low=0, high=2**31),
-                   verbose=self.verbose) for i in range(len(self.models))
+                   verbose=self.verbose,
+                   dispatch=self.dispatch) for i in range(len(self.models))
         ]
         self.pipes = [p[0] for p in pipes]
 
@@ -263,6 +269,9 @@ class MPGenerator(Default):
                     except StopIteration:
                         done = True
                         break
+
+                    if self.dispatch:
+                        w = self.summary.calc(p)
 
                     active_list.append((w, p))
                     self.log("Dispatching to worker (len = {})".format(
