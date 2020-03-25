@@ -31,10 +31,6 @@ def train_time_contrastive(args):
                                              cuda=cuda,
                                              lr=lr)
 
-def visualization(args):
-    model_name = args.model_name
-    model_file = args.model_file
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 

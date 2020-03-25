@@ -8,7 +8,7 @@ from delfi.generator.Default import Default
 from delfi.utils.progress import no_tqdm, progressbar
 import time
 import h5py
-
+import torch.multiprocessing as torchmp
 
 class Worker(mp.Process):
 
@@ -86,6 +86,7 @@ class Worker(mp.Process):
 def default_MPGenerator_rej(x):
     return 1
 
+class TorchWorker()
 
 class MPGenerator(Default):
 
