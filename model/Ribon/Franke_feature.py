@@ -5,14 +5,14 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
-from Franke import get_data_pair_lchirp
+from .Franke import get_data_pair_lchirp
 
 CLUSTER_ID = 1
 
 MAX_TAU = 2000
 
 DT = 0.1
-_, _, TARGET = get_data_pair_lchirp(CLUSTER_ID, dt=DT)
+_, _, TARGET = get_data_pair_lchirp(CLUSTER_ID, DATATYPE=1, dt=DT)
 
 
 def get_trace_discrepancy(trace, dt):

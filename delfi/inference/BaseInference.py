@@ -64,7 +64,7 @@ class BaseInference(metaclass=ABCMetaDoc):
             params, stats = pilot_samples[0], pilot_samples[1]
         else:
             params, stats = generator.gen(1, skip_feedback=True, verbose=False)
-        assert stats.ndim == 2, "invalid summary stats"
+        assert stats.ndim == 2, "invalid summary stats, shape: {}".format(stats.shape)
         kwargs.update({
             'n_inputs': stats.shape[1],
             'n_outputs': params.shape[1],
