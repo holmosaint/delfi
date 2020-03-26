@@ -59,9 +59,11 @@ def run(args):
     n_segments = args.n_segments
     res_layers = args.res_layers
     store_path = result_dir
-    kwargs = {'n_segments': n_segments,
-              'res_layers': res_layers,
-              'store_path': store_path}
+    kwargs = {
+        'n_segments': n_segments,
+        'res_layers': res_layers,
+        'store_path': store_path
+    }
 
     if model_name == 'HH':
         prior_min = np.array([0.5, 1e-4, 1e-4, 1e-4, 50, 40, 1e-4, 35])
@@ -158,7 +160,7 @@ def run(args):
                        dt=dt,
                        n_summary=n_summary,
                        _type=feature_type,
-                       model_path=model_path, 
+                       model_path=model_path,
                        **kwargs)
         obs_stats = s.calc([{'data': obs}])
         n_summary = obs_stats.reshape(-1).shape[0]
@@ -176,7 +178,7 @@ def run(args):
         g = dg.MPGenerator(models=m,
                            prior=prior,
                            summary=s,
-                           dispatch=dispatch
+                           dispatch=dispatch,
                            data_file_name=store_file)
 
     else:
@@ -247,6 +249,7 @@ def run(args):
         (prior_min.reshape(-1, 1), prior_max.reshape(-1, 1)), axis=1)
 
     posterior_samples = posterior[-1].gen(10000)
+
     np.save(os.path.join(result_dir, 'param_samples.npy'), posterior_samples)
     ###################
     # colors
@@ -299,13 +302,15 @@ def run(args):
     num_samp = 200
 
     # sample from posterior
-    x_samp = posterior[0].gen(n_samples=num_samp)
+    # x_samp = posterior[0].gen(n_samples=num_samp)
+    x_samp = posterior_samples
 
     # reject samples for which prior is zero
     ind = (x_samp >= prior_min) & (x_samp <= prior_max)
     params = x_samp[np.prod(ind, axis=1) == 1]
 
     num_samp = min(2, len(params[:, 0]))
+    # print("Num samp:", num_samp)
 
     # simulate and plot samples
     V = np.zeros((len(t), num_samp))

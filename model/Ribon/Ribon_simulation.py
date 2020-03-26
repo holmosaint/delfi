@@ -113,7 +113,7 @@ class RibonStats(BaseSummaryStats):
             .format(self.type))
         self.round = 0
         self.model_path = model_path
-        
+
         if self.type == 'TCL':
             self.extractor = TimeContrastiveFeatureExtractor(**kwargs)
             self.extractor.net.cuda()
@@ -136,13 +136,19 @@ class RibonStats(BaseSummaryStats):
         if self.type == 'PCA':
             f = h5py.File(self.model_path, 'r')
 
-        
+        # print("Repetition list:", repetition_list[0].keys())
         if self.type == 'TCL':
-            for r in range(0, len(repetition_list), 100):
-                d_array = np.concatenate([d['data'].reshape(1, 1, -1) for d in repetition_list[r:r+128]], axis=0).astype(np.float32)
+            batch_size = min(len(repetition_list), 100)
+            for r in range(0, len(repetition_list), batch_size):
+                _end = min(len(repetition_list), r + batch_size)
+                d_array = np.concatenate([
+                    d['data'].reshape(1, 1, -1) for d in repetition_list[r:_end]
+                ],
+                                         axis=0).astype(np.float32)
                 d_array = torch.from_numpy(d_array).cuda()
-                feature = self.extractor.get_feature(d_array).reshape(128, -1)
-                for i in range(100):
+                feature = self.extractor.get_feature(d_array).reshape(
+                    _end - r, -1)
+                for i in range(_end - r):
                     stats.append(feature[i])
         else:
 
@@ -151,24 +157,26 @@ class RibonStats(BaseSummaryStats):
                 assert x['data'].shape[0] == 15996, print(x['data'].shape)
                 if self.type == 'He':
                     sum_stats_vec = get_trace_features(x['data'], self.dt)  #.reshape(1, -1)
-    
+
                 elif self.type == 'Raw':
                     sum_stats_vec = x['data']
-        
+
                 elif self.type == 'PCA':
-    
+
                     sum_stats_vec = np.zeros((25 * 3))
                     with h5py.File(self.model_path, 'r') as f:
                         for i in range(3):
                             if i < 2:
-                                res = x['data'][i * 5000:(i + 1) * 5000].reshape(-1, 1)
+                                res = x['data'][i * 5000:(i + 1) *
+                                                5000].reshape(-1, 1)
                             else:
                                 res = x['data'][i * 5000:].reshape(-1, 1)
                             PCA_matrix = f.get(str(i))[...]
-                            sum_stats_vec[i * 25:(i + 1) * 25] = np.matmul(PCA_matrix, res).reshape(-1)
-        
+                            sum_stats_vec[i * 25:(i + 1) * 25] = np.matmul(
+                                PCA_matrix, res).reshape(-1)
+
             stats.append(sum_stats_vec)
-    
+
         if self.type == 'PCA':
             f.close()
 
