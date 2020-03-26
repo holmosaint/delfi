@@ -5,20 +5,44 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
-from .configures import *
+from Franke import get_data_pair_lchirp
+
+CLUSTER_ID = 1
+
+MAX_TAU = 2000
+
+DT = 0.1
+_, _, TARGET = get_data_pair_lchirp(CLUSTER_ID, dt=DT)
+
+
+def get_trace_discrepancy(trace, dt):
+    """
+    #trace: response trace
+    #dt: time step of trace
+    -------
+    return: vector of discrepancy values in trace (0~1)
+    notice: please use the function `set_target_features` first
+    """
+    trace_features = get_trace_features(trace, dt=dt)
+    return np.abs(trace_features - TARGET_features)
+
+
+def set_target_features(dt):
+    global TARGET_features
+    TARGET_features = get_trace_features(TARGET[::int(dt / DT)], dt=dt)
 
 
 def get_trace_features(trace, dt=DT):
     """
     #trace: response trace
     #dt: time step of trace
-    --------
-    return: value of #218 features
     """
     n_pre = int(2000 / dt)
     trace -= trace[:n_pre].mean()
+    target = TARGET[::int(dt / DT)]
     features = np.concatenate(
-        (get_step_features(trace, dt), get_freq_features(trace, dt),
+        ([min(np.abs(trace - target).sum() / np.abs(target).sum(),
+              1)], get_step_features(trace, dt), get_freq_features(trace, dt),
          get_contrast_features(trace, dt)))
     return features
 
@@ -31,25 +55,36 @@ def get_feature_tau(trace, dt=DT):
     return tau
 
 
+@np.vectorize
+def normalize_resp(value):
+    return (value + 1) / 2.
+
+
 def get_feature_steplike(response, dt=DT):
     mean = response.mean()
     max = response.max()
     min = response.min()
     features = [mean, response[int(response.shape[0] / 2):].mean()]
+    features = normalize_resp(features).tolist()
     if (max - mean) > (mean - min):
         # has a peak
-        features.append(max)
+        features.append(normalize_resp(max))
         index = np.where(response == max)[0][0]
-        features.append(index * dt)
+        peak_time = float(index) / len(response)
+        features.append(peak_time)
         trace = response[index] - response[index:]
     else:
         # has a boltten
-        features.append(min)
+        features.append(normalize_resp(min))
         index = np.where(response == min)[0][0]
-        features.append(index * dt)
+        botten_time = float(index) / len(response)
+        features.append(botten_time)
         trace = response[index:] - response[index]
     try:
-        features.append(get_feature_tau(trace, dt))
+        tau = get_feature_tau(trace, dt)
+        tau /= MAX_TAU
+        tau = min(1, tau)
+        features.append(tau)
     except:
         features.append(0.)
     return features
@@ -86,15 +121,15 @@ def get_freq_features(trace, dt=DT):
         points = points[-63:]
     if len(points) < 63:
         features = np.concatenate((
-            points * dt,
+            points / float(len(response)),
             [0.] * (63 - len(points)),
-            response[points],
+            normalize_resp(response[points]),
             [0.] * (63 - len(points)),
         ))
     else:
         features = np.concatenate((
-            points * dt,
-            response[points],
+            points / float(len(response)),
+            normalize_resp(response[points]),
         ))
     return features
 
@@ -111,14 +146,14 @@ def get_contrast_features(trace, dt=DT):
         points = points[-31:]
     if len(points) < 31:
         features = np.concatenate((
-            points * dt,
+            points / float(len(response)),
             [0.] * (31 - len(points)),
-            response[points],
+            normalize_resp(response[points]),
             [0.] * (31 - len(points)),
         ))
     else:
         features = np.concatenate((
-            points * dt,
-            response[points],
+            points / float(len(response)),
+            normalize_resp(response[points]),
         ))
     return features
