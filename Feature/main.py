@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import argparse
 
-from .model import TimeContrastiveFeatureExtractor
-from .utils import construct_data_loader
+from Feature.model import TimeContrastiveFeatureExtractor
+from Feature.utils import construct_data_loader
 
 
 def train_time_contrastive(args):

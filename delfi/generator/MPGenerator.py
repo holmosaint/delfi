@@ -307,10 +307,12 @@ class MPGenerator(Default):
 
         # n_samples x n_reps x dim summary stats
         stats = np.array(final_stats)
+
         if not self.dispatch:
             stats = stats.squeeze(axis=1)
         else:
-            stats = stats.squeeze(axis=0)
+            _dim = stats.shape[-1]
+            stats = stats.reshape(1, -1, _dim).squeeze(axis=0)
 
         # print("Stats shape:", stats.shape)
         if self.data_file_name is not None:
