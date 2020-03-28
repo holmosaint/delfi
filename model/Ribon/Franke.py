@@ -1,18 +1,18 @@
 #coding:UTF-8
 
 # import h5py
+import math
 import dill
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 
-from .configures import *
-from .utils import get_peaks_index, get_func_from_parameters
-from .filters import TemporalFilter, ContainerFilter
-from .models import Ribbon, RmaxRibbon
-from . import optimize as O
-import os
-current_path = os.path.dirname(__file__)
+from configures import *
+from utils import get_peaks_index, get_func_from_parameters, normalize_trace
+from filters import TemporalFilter, ContainerFilter
+from models import Ribbon, RmaxRibbon
+from photoreceptor import DA18 as Cone_MODEL
+import optimize as O
 
 # DATA =  h5py.File("../datas/FrankeEtAl_BCs_2017_v1.mat", "r")
 RESP_CHECK = [
@@ -121,12 +121,16 @@ class SinglePathwayModel:
 
     def __init__(self,
                  parameters,
-                 dt=DT,
+                 PHOTO=False,
                  feedback_mode=0,
                  RMAX=False,
-                 single=False):
+                 single=False,
+                 dt=DT):
         self.parameters = parameters
         self.single = single
+        if PHOTO:
+            self.cone = Cone_MODEL(*parameters[:5], dt=dt)
+            parameters = parameters[5:]
         if single:
             self.sigmoid1 = get_func_from_parameters("sigmoid", parameters[:3])
             self.temporal1 = ContainerFilter(lambda x: parameters[3], dt=dt)
@@ -203,20 +207,26 @@ class SinglePathwayModel:
             self.fb_weight2 = parameters[22]
 
     def run(self, trace):
+        rs = []
+        if hasattr(self, "cone"):
+            trace = self.cone.run(trace)[0]
+            # normalize
+            trace = (trace - trace.min()) / (trace.max() - trace.min())
+            rs.append(trace)
         sigmoid1 = self.sigmoid1(trace)
         temporal1 = self.temporal1.filter(sigmoid1)
+        rs = [temporal1, sigmoid1] + rs
         if self.fb_mode == 0:
             if self.single:
                 ribbon1 = self.ribbon1.run(temporal1)
-                return ribbon1 + [temporal1, sigmoid1]
+                return ribbon1 + rs
 
             ribbon1 = self.ribbon1.run(temporal1)
             temporal2 = self.temporal2.filter(ribbon1[0])
             sigmoid2 = self.sigmoid2(temporal2)
             temporal3 = self.temporal3.filter(sigmoid2)
             ribbon2 = self.ribbon2.run(temporal3)
-            return ribbon2 + [temporal3, sigmoid2, temporal2
-                             ] + ribbon1 + [temporal1, sigmoid1]
+            return ribbon2 + [temporal3, sigmoid2, temporal2] + ribbon1 + rs
         if self.fb_mode == 1:
             # feedback inhibitation on [Ca]
             # (temporal filter for input of ribbon synapse)
@@ -239,6 +249,38 @@ def get_data_idx(value_name, cluster_id=1):
     return value / index.shape[0]
 
 
+def get_data_experiment(cluster_id,
+                        data_mat,
+                        idx_mat,
+                        data_label,
+                        data_id,
+                        data_key,
+                        dt=DT):
+    time = np.array(idx_mat['chirp_time']).flatten()
+    cato_indices = np.where(np.array(idx_mat['cluster_idx']) == cluster_id)[0]
+    cato_indices = set(cato_indices)
+    data_indices = np.where(np.array(data_mat[data_label]) == data_id)[0]
+    data_indices = set(data_indices)
+    indices = np.array(list(cato_indices & data_indices), dtype=int)
+    nonan_indices = []
+    for index in indices:
+        if True not in np.isnan(data_mat[data_key][:, index]):
+            nonan_indices.append(index)
+    print("%d valid trace(s)" % len(nonan_indices))
+    if len(nonan_indices) == 0:
+        return None
+    data = np.array(data_mat[data_key]).T[nonan_indices].mean(axis=0)
+    time = time * 1000.
+    # return time, data, nonan_indices, indices
+    time = np.array([0.] + time.tolist())
+    data = normalize_trace(data, data[0])
+    data = np.array([0.] + data.tolist())
+    x = np.arange(0, 31992, dt)
+    func = interp1d(time, data, kind='quadratic')
+    y = np.vectorize(func)(x)
+    return y
+
+
 def get_linear_filter(cluster_id=1, dt=DT, interp_kind='quadratic'):
     weights = get_data_idx('rf_tc', cluster_id)
     time = DATA['rf_time'][:, 0] * 1000  # (s) -> (ms)
@@ -252,9 +294,9 @@ def get_linear_filter(cluster_id=1, dt=DT, interp_kind='quadratic'):
 
 def get_stimulus(DATATYPE=0):
     if DATATYPE == 0:
-        stim = np.loadtxt(current_path + '/Data/chirp_stim.txt')
+        stim = np.loadtxt('../datas/Franke/chirp_stim.txt')
     elif DATATYPE == 1:
-        stim = np.loadtxt(current_path + '/Data/DA18_normalized_0.1.txt')
+        stim = np.loadtxt('../datas/Franke/DA18_normalized_0.1.txt')
     return stim
 
 
@@ -273,7 +315,7 @@ def get_response(cluster_id, label='lchirp_avg', interp_kind="quadratic"):
     return y
 
 
-def save_response(prefix=current_path + "/Data/lchirp_control_resp",
+def save_response(prefix="../datas/Franke/lchirp_control_resp",
                   label='lchirp_avg'):
     for i in range(1, 15):
         resp = get_response(i, label)
@@ -282,10 +324,11 @@ def save_response(prefix=current_path + "/Data/lchirp_control_resp",
 
 def get_data_pair_lchirp(cluster_id, buffer_time=10000, DATATYPE=0, dt=DT):
     stim = get_stimulus(DATATYPE)
-    response = np.loadtxt(current_path +
-                          "/Data/lchirp_control_resp_%d.txt" % cluster_id)
+    response = np.loadtxt("../datas/Franke/lchirp_control_resp_%d.txt" %
+                          cluster_id)
     stim = stim[::int(dt / DT)]
     response = response[::int(dt / DT)]
+    response -= response[:int(2000 / dt)].mean()
     n = min(len(stim), len(response))
     stim = stim[:n]
     response = response[:n]
@@ -409,6 +452,7 @@ def run_parameters(fname, pss_fname, ext, MODEL, n_pool, pre_time=20000):
 
 
 if __name__ == "__main__":
+    # if DATATYPE == 1, we actually sample OFF type ....
     run_parameters("/media/retina/Seagate Backup Plus Drive/SAMPLE_ON_DATA.txt",
                    "res/Franke/SAMPLE_ON.pkl", {"single": True},
                    SinglePathwayModel, 50)
