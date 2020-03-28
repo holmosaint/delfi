@@ -52,10 +52,7 @@ class Worker(torchmp.Process):
             self.log("Received data of size {}".format(len(params_batch)))
             result = self.model.gen(params_batch, pbar=self)
 
-            if self.dispatch is False:
-                stats, params = self.process_batch(params_batch, result)
-            else:
-                stats, params = result, params_batch
+            stats, params = self.process_batch(params_batch, result)
 
             self.log("Sending data")
             self.queue.put((stats, params))
@@ -76,7 +73,10 @@ class Worker(torchmp.Process):
         # for every data in data, calculate summary stats
         for param, datum in zip(params_data_valid, data_valid):
             # calculate summary statistics
-            sum_stats = self.summary.calc(datum)  # n_reps x dim stats
+            if not self.dispatch:
+                sum_stats = self.summary.calc(datum)  # n_reps x dim stats
+            else:
+                sum_stats = datum[0]
 
             ret_stats.append(sum_stats)
             ret_params.append(param)
@@ -270,9 +270,6 @@ class MPGenerator(Default):
                         done = True
                         break
 
-                    if self.dispatch:
-                        w = self.summary.calc(p)
-
                     active_list.append((w, p))
                     self.log("Dispatching to worker (len = {})".format(
                         len(params_batch)))
@@ -290,6 +287,8 @@ class MPGenerator(Default):
                         self.log("Received results")
                         stats, params = self.filter_data(
                             *msg, skip_feedback=skip_feedback)
+                        if self.dispatch:
+                            stats = [self.summary.calc(stats)]
                         final_stats += stats
                         final_params += params
                         n_remaining -= 1
@@ -298,6 +297,8 @@ class MPGenerator(Default):
                                  format(type(msg)))
 
         self.stop_workers()
+        """if self.dispatch:
+            final_stats = self.summary.calc(final_stats)"""
 
         # TODO: for n_reps > 1 duplicate params; reshape stats array
 
@@ -306,8 +307,14 @@ class MPGenerator(Default):
 
         # n_samples x n_reps x dim summary stats
         stats = np.array(final_stats)
-        stats = stats.squeeze(axis=1)
 
+        if not self.dispatch:
+            stats = stats.squeeze(axis=1)
+        else:
+            _dim = stats.shape[-1]
+            stats = stats.reshape(1, -1, _dim).squeeze(axis=0)
+
+        # print("Stats shape:", stats.shape)
         if self.data_file_name is not None:
             with h5py.File(self.data_file_name, 'w') as file:
                 file.create_dataset('param_data', data=params)
