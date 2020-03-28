@@ -97,7 +97,7 @@ class NeuralNet(object):
         lasagne.random.set_rng(self.rng)
 
         self.input_shape = (n_inputs,) if input_shape is None else input_shape
-        assert np.prod(self.input_shape) + self.n_bypass == self.n_inputs
+        assert np.prod(self.input_shape) + self.n_bypass == self.n_inputs, "{} {} {}".format(np.prod(self.input_shape), self.n_bypass, self.n_inputs)
         assert 1 <= len(self.input_shape) <= 3
 
         # params: output placeholder (batch, self.n_outputs)
@@ -134,17 +134,19 @@ class NeuralNet(object):
         if self.n_rnn > 0 or n_cnn > 0:
 
             if len(n_filters) > 0 and len(self.input_shape) == 2:  # 1 channel
-                rs = (-1, 1, *self.input_shape)
+                rs = (-1, *self.input_shape)
             else:
                 if self.n_rnn > 0:
                     assert len(self.input_shape) == 2  # time, dim
                 else:
-                    assert len(self.input_shape) == 3  # channel, row, col
+                    assert len(self.input_shape) == 2, self.input_shape  # channel, dim
                 rs = (-1, *self.input_shape)
 
             # last layer is 'missing' or 'direct'
             self.layer['reshape'] = ll.ReshapeLayer(last(self.layer), rs)
-
+        """print("rs: ", rs)
+        print("filters:", self.n_filters)
+        print("filter_size:", self.filter_sizes)"""
         # recurrent neural net, input: (batch, sequence_length, num_inputs)
         if self.n_rnn > 0:
             self.layer['rnn'] = ll.GRULayer(last(self.layer),
@@ -158,22 +160,22 @@ class NeuralNet(object):
                     padding = (self.filter_sizes[l] - 1) // 2
                 else:
                     padding = 0
-                self.layer['conv_' + str(l + 1)] = ll.Conv2DLayer(
+                self.layer['conv_' + str(l + 1)] = ll.Conv1DLayer(
                     name='c' + str(l + 1),
                     incoming=last(self.layer),
                     num_filters=self.n_filters[l],
                     filter_size=self.filter_sizes[l],
-                    stride=(1, 1),
+                    stride=1,
                     pad=padding,
                     untie_biases=False,
                     W=lasagne.init.GlorotUniform(),
                     b=lasagne.init.Constant(0.),
                     nonlinearity=lnl.rectify,
-                    flip_filters=True,
-                    convolution=tt.nnet.conv2d)
+                    flip_filters=True,)
+                    #convolution=tt.nnet.conv1d)
 
                 if self.pool_sizes[l] > 1:
-                    self.layer['pool_' + str(l + 1)] = ll.MaxPool2DLayer(
+                    self.layer['pool_' + str(l + 1)] = ll.MaxPool1DLayer(
                         name='p' + str(l + 1),
                         incoming=last(self.layer),
                         pool_size=self.pool_sizes[l],
@@ -195,7 +197,8 @@ class NeuralNet(object):
             self.init_maf(**density_opts)
         else:
             raise NotImplementedError
-
+    
+        print(self.layer)
         self.compile_funs()  # theano functions
 
     def init_maf(self,

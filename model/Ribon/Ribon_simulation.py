@@ -156,7 +156,7 @@ class RibonStats(BaseSummaryStats):
                 x = repetition_list[r]
                 assert x['data'].shape[0] == 15996, print(x['data'].shape)
                 if self.type == 'He':
-                    sum_stats_vec = get_trace_features(x['data'], self.dt).reshape(1, -1)
+                    sum_stats_vec = get_trace_features(x['data'], self.dt)#.reshape(1, -1)
 
                 elif self.type == 'Raw':
                     sum_stats_vec = x['data']

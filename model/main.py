@@ -196,10 +196,12 @@ def run(args):
         pilot_samples = load_data(pilot_file)
 
     # inference object
-    if feature_type == 'Raw':
+    if feature_type == 'He':
         n_filters = [64, 128, 256, 512]
+        input_shape = (1, n_summary)
     else:
         n_filters = ()
+        input_shape = None
     res = infer.SNPEC(
         g,
         obs=obs_stats,
@@ -209,7 +211,8 @@ def run(args):
         n_mades=n_mades,
         # prior_norm=prior_norm,
         density=density,
-        # n_filters=n_filters,
+        n_filters=n_filters,
+        input_shape=input_shape
     )
 
     # train
