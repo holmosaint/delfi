@@ -331,7 +331,7 @@ def run(args):
     ind = (x_samp >= prior_min) & (x_samp <= prior_max)
     params = x_samp[np.prod(ind, axis=1) == 1]
 
-    num_samp = min(2, len(params[:, 0]))
+    num_samp = 5
     # print("Num samp:", num_samp)
 
     # simulate and plot samples
@@ -344,7 +344,7 @@ def run(args):
                  color=col['SAMPLE' + str(i + 1)],
                  lw=2,
                  label='sample ' + str(num_samp - i))
-
+    np.save(os.path.join(result_dir, 'sample.npy'), V)
     # plot observation
     plt.plot(t, obs, '--', lw=2, label='observation')
     plt.xlabel('time (ms)')
