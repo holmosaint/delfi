@@ -58,6 +58,7 @@ def run(args):
     time_len = args.t
     stimulus_type = args.stimulus_type
     seq_num = args.seq
+    dim_param = args.out
 
     # TCL arguments
     n_segments = args.n_segments
@@ -105,7 +106,7 @@ def run(args):
         V0 = -70
 
         # parameters dimension
-        dim_param = 8
+        # dim_param = 8
 
         # summary statistics hyperparameters
         n_mom = 4
@@ -321,8 +322,6 @@ def run(args):
     t = np.arange(obs.shape[0])
     duration = np.max(t)
 
-    num_samp = 200
-
     # sample from posterior
     # x_samp = posterior[0].gen(n_samples=num_samp)
     x_samp = posterior_samples
@@ -331,36 +330,36 @@ def run(args):
     ind = (x_samp >= prior_min) & (x_samp <= prior_max)
     params = x_samp[np.prod(ind, axis=1) == 1]
 
-    num_samp = 5
+    num_samp = params.shape[0]
     # print("Num samp:", num_samp)
 
     # simulate and plot samples
-    V = np.zeros((len(t), num_samp))
+    V = np.zeros((seq_num, len(t), num_samp))
     for i in range(num_samp):
         x = m[0].gen_single(params[i, :])
-        V[:, i] = x['data']
-        plt.plot(t,
-                 V[:, i],
-                 color=col['SAMPLE' + str(i + 1)],
-                 lw=2,
-                 label='sample ' + str(num_samp - i))
+        V[..., i] = x['data']
+        # plt.plot(t,
+        #          V[:, i],
+        #          color=col['SAMPLE' + str(i + 1)],
+        #          lw=2,
+        #          label='sample ' + str(num_samp - i))
     np.save(os.path.join(result_dir, 'sample.npy'), V)
     # plot observation
-    plt.plot(t, obs, '--', lw=2, label='observation')
-    plt.xlabel('time (ms)')
-    plt.ylabel('voltage (mV)')
+    # plt.plot(t, obs, '--', lw=2, label='observation')
+    # plt.xlabel('time (ms)')
+    # plt.ylabel('voltage (mV)')
 
-    ax = plt.gca()
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[::-1],
-              labels[::-1],
-              bbox_to_anchor=(1.3, 1),
-              loc='upper right')
+    # ax = plt.gca()
+    # handles, labels = ax.get_legend_handles_labels()
+    # ax.legend(handles[::-1],
+    #           labels[::-1],
+    #           bbox_to_anchor=(1.3, 1),
+    #           loc='upper right')
 
-    ax.set_xticks([0, duration / 2, duration])
+    # ax.set_xticks([0, duration / 2, duration])
     # ax.set_yticks([-80, -20, 40])
 
-    plt.savefig(os.path.join(result_dir, 'result.png'), dpi=400)
+    # plt.savefig(os.path.join(result_dir, 'result.png'), dpi=400)
 
 
 if __name__ == "__main__":
@@ -444,6 +443,10 @@ if __name__ == "__main__":
                         type=int,
                         default=20,
                         help='seq num')
+    parser.add_argument('-out', 
+                        type=int,
+                        required=True,
+                        help='Param num')
     parser.add_argument('-feature',
                         type=str,
                         help='Feature to use, should be in [He, PCA, Raw, TCL]')
