@@ -35,6 +35,28 @@ def syn_current(duration=120, dt=0.01, t_on=10, curr_level=5e-4, seed=None):
     return I, t_on, t_off, dt, t, A_soma
 
 
+def ou_stimulus(m, s, time_len, dt, tau):
+    assert len(m.shape) == 2
+
+    stimulus_arr = np.zeros(list(m.shape)+[time_len])
+
+    for t in range(time_len - 1):
+        stimulus_arr[..., t+1] = stimulus_arr[..., t] - stimulus_arr[..., t] / tau * dt + m * dt + s * np.random.normal(0, 1) * np.sqrt(dt)
+    
+    return stimulus_arr
+
+def chirp_stimulus(I_C, I_0, time_len, dt):
+    L = time_len // 3 * 2
+    t = np.arange(0, L) * dt
+    sin_curve = I_C * t * np.sin(0.1*t)
+    sin_curve = np.tile(sin_curve, I_0.shape) + I_0
+
+    stimulus_arr = np.zeros(list(I_0.shape[:-1])+[time_len])
+    stimulus_arr[..., time_len // 6:time_len // 6+L] = I_0 + sin_curve
+    stimulus_arr[..., :time_len // 6] = -1.0
+
+    return stimulus_arr
+
 def HHsimulator(V0, params, dt, t, I, seed=None):
     """Simulates the Hodgkin-Huxley model for a specified time duration and current
 
@@ -220,18 +242,18 @@ class HodgkinHuxley(BaseSimulator):
 
         hh_seed = self.gen_newseed()
 
-        states = self.HHsimulator(self.init,
-                                  params.reshape(1, -1),
-                                  self.dt,
-                                  self.t,
-                                  self.I,
-                                  seed=hh_seed)
+        states_list = list()
+        for i in range(self.I.shape[0]):
+            states_list.append(self.HHsimulator(self.init,
+                                    params.reshape(1, -1),
+                                    self.dt,
+                                    self.t,
+                                    self.I[i],
+                                    seed=hh_seed))
+        states = np.concatenate(states_list, axis=0)
 
         return {
             'data': states.reshape(-1),
-            'time': self.t,
-            'dt': self.dt,
-            'I': self.I.reshape(-1)
         }
 
 

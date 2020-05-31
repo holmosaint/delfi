@@ -18,7 +18,7 @@ import delfi.generator as dg
 from delfi.utils.viz import samples_nd
 import delfi.inference as infer
 
-from HH.HH_model import syn_current, HHsimulator, HodgkinHuxley, HodgkinHuxleyStats
+from HH.HH_model import syn_current, ou_stimulus, chirp_stimulus, HHsimulator, HodgkinHuxley, HodgkinHuxleyStats
 from Ribon.Franke import get_data_pair_lchirp, SinglePathwayModel
 from Ribon.Franke_feature import get_trace_features
 from Ribon.Ribon_simulation import Ribon, RibonStats
@@ -55,6 +55,10 @@ def run(args):
     feature_type = args.feature
     dispatch = args.dispatch
 
+    time_len = args.t
+    stimulus_type = args.stimulus_type
+    seq_num = args.seq
+
     # TCL arguments
     n_segments = args.n_segments
     res_layers = args.res_layers
@@ -80,7 +84,22 @@ def run(args):
         ]
 
         # input current, time step
-        I, t_on, t_off, dt, t, A_soma = syn_current()
+        # I, t_on, t_off, dt, t, A_soma = syn_current()
+        if stimulus_type == 'ou':
+            tau = 1
+            mu_max = 20
+            mu_min = 0
+            sigma_max = 5
+            sigma_min = 0
+            m = np.linspace(mu_min, mu_max, seq_num).reshape(1, seq_num)
+            s = 1
+        
+            I = ou_stimulus(m, s, time_len, dt, tau).reshape(list(m.shape)+[time_len])
+        elif stimulus_type == 'chirp':
+            I_C = 0.015
+            I_0 = np.linspace(0.0, 4.0, seq_num).reshape(1, seq_num, 1)
+
+            I = chirp_stimulus(I_C, I_0, time_len, dt)
 
         # initial voltage
         V0 = -70
@@ -91,8 +110,8 @@ def run(args):
         # summary statistics hyperparameters
         n_mom = 4
 
-        s = HodgkinHuxleyStats(t_on=t_on,
-                               t_off=t_off,
+        s = HodgkinHuxleyStats(t_on=0,
+                               t_off=time_len,
                                n_mom=n_mom,
                                n_summary=n_summary)
 
