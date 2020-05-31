@@ -94,10 +94,10 @@ def run(args):
             m = np.linspace(mu_min, mu_max, seq_num).reshape(1, seq_num)
             s = 1
         
-            I = ou_stimulus(m, s, time_len, dt, tau).reshape(list(m.shape)+[time_len])
+            I = ou_stimulus(m, s, time_len, dt, tau).reshape(list(m.shape)+[time_len]).reshape(seq_num, -1)
         elif stimulus_type == 'chirp':
             I_C = 0.015
-            I_0 = np.linspace(0.0, 4.0, seq_num).reshape(1, seq_num, 1)
+            I_0 = np.linspace(0.0, 4.0, seq_num).reshape(1, seq_num, 1).reshape(seq_num, -1)
 
             I = chirp_stimulus(I_C, I_0, time_len, dt)
 
@@ -110,7 +110,7 @@ def run(args):
         # summary statistics hyperparameters
         n_mom = 4
 
-        s = HodgkinHuxleyStats(t_on=0,
+        s = HodgkinHuxleyStats(t_on=100,
                                t_off=time_len,
                                n_mom=n_mom,
                                n_summary=n_summary)
@@ -454,7 +454,7 @@ if __name__ == "__main__":
                         type=str,
                         default=None,
                         help='Path to feature model')
-    parser.add_argument('-dt', type=int, help='dt')
+    parser.add_argument('-dt', type=float, help='dt')
     parser.add_argument('-n_segments',
                         type=int,
                         default=None,

@@ -7,12 +7,12 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 
-from configures import *
-from utils import get_peaks_index, get_func_from_parameters, normalize_trace
-from filters import TemporalFilter, ContainerFilter
-from models import Ribbon, RmaxRibbon
-from photoreceptor import DA18 as Cone_MODEL
-import optimize as O
+from .configures import *
+from .utils import get_peaks_index, get_func_from_parameters, normalize_trace
+from .filters import TemporalFilter, ContainerFilter
+from .models import Ribbon, RmaxRibbon
+from .photoreceptor import DA18 as Cone_MODEL
+from . import optimize as O
 
 
 # DATA =  h5py.File("../datas/FrankeEtAl_BCs_2017_v1.mat", "r")
@@ -235,9 +235,9 @@ def get_linear_filter(cluster_id=1, dt=DT, interp_kind='quadratic'):
 
 def get_stimulus(DATATYPE=0):
     if DATATYPE == 0:
-        stim = np.loadtxt('../datas/Franke/chirp_stim.txt')
+        stim = np.loadtxt('Ribon/Data/chirp_stim.txt')
     elif DATATYPE == 1:
-        stim = np.loadtxt('../datas/Franke/DA18_normalized_0.1.txt')
+        stim = np.loadtxt('Ribon/Data/DA18_normalized_0.1.txt')
     return stim
 
 def get_response(cluster_id, label='lchirp_avg',
@@ -256,7 +256,7 @@ def get_response(cluster_id, label='lchirp_avg',
     y = func(x)
     return y
 
-def save_response(prefix="../datas/Franke/lchirp_control_resp",
+def save_response(prefix="Ribon/Data/lchirp_control_resp",
                   label='lchirp_avg'):
     for i in range(1, 15):
         resp = get_response(i, label)
@@ -266,9 +266,9 @@ def get_data_pair_lchirp(cluster_id, buffer_time=10000, DATATYPE=0,
                          RESPTYPE=0, dt=DT):
     stim = get_stimulus(DATATYPE)
     if RESPTYPE > 0:
-        response = np.loadtxt("../datas/Franke/lchirp_%d_resp_%d.txt")%(RESPTYPE, cluster_id)
+        response = np.loadtxt("Ribon/Data/lchirp_%d_resp_%d.txt")%(RESPTYPE, cluster_id)
     else:
-        response = np.loadtxt("../datas/Franke/lchirp_control_resp_%d.txt"%cluster_id)
+        response = np.loadtxt("Ribon/Data/lchirp_control_resp_%d.txt"%cluster_id)
     stim = stim[::int(dt/DT)]
     response = response[::int(dt/DT)]
     response -= response[:int(2000/dt)].mean()

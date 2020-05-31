@@ -40,7 +40,7 @@ def ou_stimulus(m, s, time_len, dt, tau):
 
     stimulus_arr = np.zeros(list(m.shape)+[time_len])
 
-    for t in range(time_len - 1):
+    for t in range(100, time_len - 1):
         stimulus_arr[..., t+1] = stimulus_arr[..., t] - stimulus_arr[..., t] / tau * dt + m * dt + s * np.random.normal(0, 1) * np.sqrt(dt)
     
     return stimulus_arr
@@ -218,7 +218,7 @@ class HodgkinHuxley(BaseSimulator):
         super().__init__(dim_param=dim_param, seed=seed)
         self.I = I
         self.dt = dt
-        self.t = np.arange(0, len(self.I), 1) * self.dt
+        self.t = np.arange(0, self.I.shape[-1], 1) * self.dt
         self.HHsimulator = HHsimulator
         self.init = V0
 
@@ -243,17 +243,20 @@ class HodgkinHuxley(BaseSimulator):
         hh_seed = self.gen_newseed()
 
         states_list = list()
+        # print("I shape:", self.I.shape)
         for i in range(self.I.shape[0]):
             states_list.append(self.HHsimulator(self.init,
                                     params.reshape(1, -1),
                                     self.dt,
                                     self.t,
                                     self.I[i],
-                                    seed=hh_seed))
+                                    seed=hh_seed).reshape(1, -1))
         states = np.concatenate(states_list, axis=0)
-
+        # print("States shape:", states.shape)
         return {
-            'data': states.reshape(-1),
+            'data': states,
+            'time': self.t,
+            'dt': self.dt
         }
 
 
@@ -287,17 +290,20 @@ class HodgkinHuxleyStats(BaseSummaryStats):
         np.array, 2d with n_reps x n_summary
         """
         stats = []
-        for r in range(len(repetition_list)):
-            x = repetition_list[r]
+        # print(repetition_list[0]['data'].shape)
+        for r in range(repetition_list[0]['data'].shape[0]):
+            x = repetition_list[0]
 
-            N = x['data'].shape[0]
+            # N = x['data'].shape[0]
+            data = x['data'][r, :]
             t = x['time']
+            # print('t shape:', t.shape)
             dt = x['dt']
             t_on = self.t_on
             t_off = self.t_off
 
             # initialise array of spike counts
-            v = np.array(x['data'])
+            v = np.array(x['data'][r, :])
 
             # put everything to -10 that is below -10 or has negative slope
             ind = np.where(v < -10)
@@ -317,14 +323,14 @@ class HodgkinHuxleyStats(BaseSummaryStats):
                     np.append(1, np.diff(spike_times_stim)) > 0.5]
 
             # resting potential and std
-            rest_pot = np.mean(x['data'][t < t_on])
-            rest_pot_std = np.std(x['data'][int(.9 * t_on / dt):int(t_on / dt)])
+            rest_pot = np.mean(data[t < t_on])
+            rest_pot_std = np.std(data[int(.9 * t_on / dt):int(t_on / dt)])
 
             # moments
-            std_pw = np.power(np.std(x['data'][(t > t_on) & (t < t_off)]),
+            std_pw = np.power(np.std(data[(t > t_on) & (t < t_off)]),
                               np.linspace(3, self.n_mom, self.n_mom - 2))
             std_pw = np.concatenate((np.ones(1), std_pw))
-            moments = spstats.moment(x['data'][(t > t_on) & (t < t_off)],
+            moments = spstats.moment(data[(t > t_on) & (t < t_off)],
                                      np.linspace(2, self.n_mom,
                                                  self.n_mom - 1)) / std_pw
 
@@ -333,10 +339,10 @@ class HodgkinHuxleyStats(BaseSummaryStats):
                 (np.array([spike_times_stim.shape[0]]),
                  np.array([
                      rest_pot, rest_pot_std,
-                     np.mean(x['data'][(t > t_on) & (t < t_off)])
+                     np.mean(data[(t > t_on) & (t < t_off)])
                  ]), moments))
             sum_stats_vec = sum_stats_vec[0:self.n_summary]
 
             stats.append(sum_stats_vec)
 
-        return np.asarray(stats)
+        return np.asarray(stats).reshape(1, -1)

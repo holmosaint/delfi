@@ -3,7 +3,7 @@
 import math
 import numpy as np
 
-from configures import *
+from .configures import *
 
 class Container:
     def __init__(self, variables, step_func):

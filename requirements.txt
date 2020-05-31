@@ -1,10 +1,13 @@
 numpy
 scipy
-https://github.com/Theano/Theano/archive/master.zip
+# https://github.com/Theano/Theano/archive/master.zip
+theano
 dill
 matplotlib
 tqdm
 ipython
 ipywidgets
-https://github.com/Lasagne/Lasagne/archive/master.zip
+#https://github.com/Lasagne/Lasagne/archive/master.zip
+Lasagne
 git+https://github.com/mnonnenm/SNL_py3port
+# SNL_py3port
