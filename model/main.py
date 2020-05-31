@@ -433,6 +433,17 @@ if __name__ == "__main__":
         help=
         'Proposal to use, should be in [prior, gaussion, mog, atomic, atomic_comb]'
     )
+    parser.add_argument('-t',
+                        type=int,
+                        default=2000,
+                        help='Time length')
+    parser.add_argument('-stimulus_type',
+                        type=str,
+                        help='Stimulus Type in [ou, chirp]')
+    parser.add_argument('-seq',
+                        type=int,
+                        default=20,
+                        help='seq num')
     parser.add_argument('-feature',
                         type=str,
                         help='Feature to use, should be in [He, PCA, Raw, TCL]')
